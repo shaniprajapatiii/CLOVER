@@ -1,4 +1,4 @@
-# 🛡️ GigShield — AI-Powered Parametric Insurance for India's Gig Economy
+# 🛡️ CLOVER — AI-Powered Parametric Insurance for India's Gig Economy
 
 A full-stack, production-grade insurance platform protecting delivery workers (Zomato, Swiggy, Zepto, Amazon, etc.) from income loss due to weather, pollution, curfews, and other external disruptions.
 
@@ -7,7 +7,7 @@ A full-stack, production-grade insurance platform protecting delivery workers (Z
 ## 🏗️ Architecture
 
 ```
-gigshield/
+clover/
 ├── backend/          # Express.js + MongoDB API
 │   ├── src/
 │   │   ├── models/       # Mongoose schemas (Worker, Policy, Claim, WeatherEvent, Notification)

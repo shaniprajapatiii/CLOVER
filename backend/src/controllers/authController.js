@@ -48,7 +48,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Welcome to GigShield.',
+      message: 'Registration successful! Welcome to CLOVER.',
       token,
       worker: {
         _id: worker._id,

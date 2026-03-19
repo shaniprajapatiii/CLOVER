@@ -14,6 +14,8 @@ export function WeatherPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState(worker?.city || 'Mumbai');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -24,24 +26,40 @@ export function WeatherPage() {
       ]);
       setWeather(wRes.data);
       setEvents(evRes.data.events || []);
+      setLastUpdated(new Date());
     } catch { } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, [city]);
 
+  useEffect(() => {
+    if (!autoRefresh) return undefined;
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, [city, autoRefresh]);
+
   const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'];
 
   return (
-    <div className="space-y-6 animate-slide-in">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-white">Weather Alerts</h1>
-        <p className="text-gray-400 text-sm mt-1">Real-time disruption monitoring across Indian cities</p>
+    <div className="page-container animate-slide-in">
+      <div className="section-head">
+        <div>
+          <span className="section-chip mb-3">Live Monitoring</span>
+          <h1 className="font-display text-2xl font-bold text-white">Weather Alerts</h1>
+          <p className="text-gray-400 text-sm mt-1">Real-time disruption monitoring across Indian cities {lastUpdated ? `· Updated ${lastUpdated.toLocaleTimeString('en-IN')}` : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchData} className="btn-secondary text-sm py-2 px-3">Refresh</button>
+          <button onClick={() => setAutoRefresh(v => !v)} className="btn-secondary text-sm py-2 px-3">
+            Auto: {autoRefresh ? 'On' : 'Off'}
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {cities.map(c => (
           <button key={c} onClick={() => setCity(c)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${city === c ? 'bg-brand-500 text-white' : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'}`}>
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${city === c ? 'bg-brand-500 text-white' : 'bg-white/[0.03] text-gray-400 hover:text-white border border-white/10'}`}>
             {c}
           </button>
         ))}
@@ -130,6 +148,7 @@ export function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [viewMode, setViewMode] = useState('all');
 
   useEffect(() => {
     const load = async () => {
@@ -150,28 +169,34 @@ export function NotificationsPage() {
   };
 
   const TYPE_ICONS = { claim_triggered: '⚡', claim_approved: '✅', claim_rejected: '❌', claim_paid: '💰', policy_created: '🛡️', policy_expiring: '⏰', policy_renewed: '🔄', weather_alert: '🌩️', fraud_alert: '🚨', general: '📢' };
+  const visibleNotifications = viewMode === 'unread' ? notifications.filter((n) => !n.isRead) : notifications;
 
   return (
-    <div className="space-y-6 animate-slide-in">
-      <div className="flex items-center justify-between">
+    <div className="page-container animate-slide-in">
+      <div className="section-head">
         <div>
+          <span className="section-chip mb-3">Activity Feed</span>
           <h1 className="font-display text-2xl font-bold text-white">Notifications</h1>
           {unreadCount > 0 && <p className="text-gray-400 text-sm mt-1">{unreadCount} unread notifications</p>}
         </div>
-        {unreadCount > 0 && (
-          <button onClick={markAllRead} className="btn-secondary text-sm py-2">Mark All Read</button>
-        )}
+        <div className="flex gap-2">
+          <button onClick={() => setViewMode('all')} className={viewMode === 'all' ? 'tabs-btn-active' : 'tabs-btn'}>All</button>
+          <button onClick={() => setViewMode('unread')} className={viewMode === 'unread' ? 'tabs-btn-active' : 'tabs-btn'}>Unread</button>
+          {unreadCount > 0 && (
+            <button onClick={markAllRead} className="btn-secondary text-sm py-2">Mark All Read</button>
+          )}
+        </div>
       </div>
 
       {loading ? [...Array(5)].map((_, i) => <div key={i} className="card h-16 skeleton" />) :
-        notifications.length === 0 ? (
+        visibleNotifications.length === 0 ? (
           <div className="card text-center py-16">
             <div className="text-5xl mb-4">🔔</div>
-            <p className="text-gray-400">No notifications yet</p>
+            <p className="text-gray-400">No notifications in this view</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {notifications.map(n => (
+            {visibleNotifications.map(n => (
               <div key={n._id} className={`card flex items-start gap-3 cursor-pointer transition-all ${!n.isRead ? 'border-brand-500/30 bg-brand-500/5' : ''}`}
                 onClick={() => notificationAPI.markRead(n._id)}>
                 <div className="text-2xl mt-0.5">{TYPE_ICONS[n.type] || '📢'}</div>
@@ -197,8 +222,29 @@ import { authAPI } from '../services/api';
 
 export function ProfilePage() {
   const { worker, updateWorker } = useAuthStore();
-  const [form, setForm] = useState({ name: worker?.name || '', email: worker?.email || '', upiId: worker?.upiId || '' });
+  const [form, setForm] = useState({
+    name: worker?.name || '',
+    email: worker?.email || '',
+    upiId: worker?.upiId || '',
+    bankAccountNumber: worker?.bankAccountNumber || '',
+    ifscCode: worker?.ifscCode || '',
+    averageWeeklyEarnings: worker?.averageWeeklyEarnings || 3500,
+    averageDailyHours: worker?.averageDailyHours || 8
+  });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [saving, setSaving] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const completionChecks = [
+    worker?.name,
+    worker?.email,
+    worker?.upiId,
+    worker?.isKycVerified,
+    worker?.bankAccountNumber || worker?.ifscCode,
+    worker?.city,
+    worker?.vehicleType,
+  ];
+  const completionPct = Math.round((completionChecks.filter(Boolean).length / completionChecks.length) * 100);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -210,8 +256,36 @@ export function ProfilePage() {
     } catch { } finally { setSaving(false); }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('New password and confirmation do not match');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await authAPI.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Password changed successfully');
+    } catch { } finally { setSavingPassword(false); }
+  };
+
+  const copyReferralCode = async () => {
+    if (!worker?.referralCode) return;
+    await navigator.clipboard.writeText(worker.referralCode);
+    toast.success('Referral code copied');
+  };
+
   return (
-    <div className="space-y-6 animate-slide-in max-w-2xl">
+    <div className="page-container animate-slide-in max-w-4xl">
       <div>
         <h1 className="font-display text-2xl font-bold text-white">Profile</h1>
         <p className="text-gray-400 text-sm mt-1">Manage your account details</p>
@@ -222,7 +296,7 @@ export function ProfilePage() {
         <div className="w-16 h-16 rounded-full bg-brand-500/20 border-2 border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-2xl">
           {worker?.name?.[0]?.toUpperCase()}
         </div>
-        <div>
+        <div className="flex-1">
           <p className="font-bold text-white text-lg">{worker?.name}</p>
           <p className="text-gray-400 text-sm">{worker?.phone} · {worker?.city}</p>
           <div className="flex items-center gap-2 mt-1">
@@ -234,10 +308,28 @@ export function ProfilePage() {
             </span>
           </div>
         </div>
+        <div className="text-right">
+          <p className="text-xs text-gray-500">Profile Completion</p>
+          <p className="font-display text-2xl font-bold text-brand-300">{completionPct}%</p>
+          <div className="w-28 h-2 rounded-full bg-dark-700 mt-1 overflow-hidden">
+            <div className="h-full bg-brand-500" style={{ width: `${completionPct}%` }} />
+          </div>
+        </div>
       </div>
 
-      <div className="card">
-        <h2 className="font-display text-lg font-bold text-white mb-4">Edit Profile</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <h2 className="font-display text-lg font-bold text-white">Edit Profile</h2>
+            <div className="flex items-center gap-2">
+              <span className="badge badge-green text-xs">⭐ {worker?.loyaltyPoints || 0} points</span>
+              {worker?.referralCode && (
+                <button type="button" onClick={copyReferralCode} className="btn-secondary py-1.5 px-3 text-xs">
+                  Copy Referral: {worker.referralCode}
+                </button>
+              )}
+            </div>
+          </div>
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -253,6 +345,26 @@ export function ProfilePage() {
             <label className="block text-sm text-gray-300 mb-1">UPI ID (for payouts)</label>
             <input className="input-field" placeholder="yourname@upi" value={form.upiId} onChange={e => setForm(f => ({ ...f, upiId: e.target.value }))} />
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Bank Account Number</label>
+              <input className="input-field font-mono" placeholder="Optional" value={form.bankAccountNumber} onChange={e => setForm(f => ({ ...f, bankAccountNumber: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">IFSC Code</label>
+              <input className="input-field font-mono uppercase" placeholder="SBIN0001234" value={form.ifscCode} onChange={e => setForm(f => ({ ...f, ifscCode: e.target.value.toUpperCase() }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Average Weekly Earnings (₹)</label>
+              <input type="number" min={500} className="input-field" value={form.averageWeeklyEarnings} onChange={e => setForm(f => ({ ...f, averageWeeklyEarnings: parseInt(e.target.value || '0', 10) }))} />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Daily Working Hours</label>
+              <input type="number" min={1} max={16} className="input-field" value={form.averageDailyHours} onChange={e => setForm(f => ({ ...f, averageDailyHours: parseInt(e.target.value || '0', 10) }))} />
+            </div>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
             {[['Platform', worker?.platform], ['City', worker?.city], ['Vehicle', worker?.vehicleType], ['Segment', worker?.deliverySegment]].map(([l, v]) => (
               <div key={l} className="bg-dark-700 rounded-xl p-3">
@@ -265,6 +377,55 @@ export function ProfilePage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+        </div>
+
+        <div className="card">
+          <h2 className="font-display text-lg font-bold text-white mb-4">Security</h2>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Current Password</label>
+              <input type="password" className="input-field" value={passwordForm.currentPassword} onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))} required />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">New Password</label>
+              <input type="password" className="input-field" value={passwordForm.newPassword} onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))} required />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-1">Confirm New Password</label>
+              <input type="password" className="input-field" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))} required />
+            </div>
+            <button type="submit" className="btn-secondary" disabled={savingPassword}>
+              {savingPassword ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
+        </div>
+
+        <div className="card">
+          <h2 className="font-display text-lg font-bold text-white mb-4">Account Snapshot</h2>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Referral Code</span>
+              <span className="text-white font-medium">{worker?.referralCode || '—'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Loyalty Points</span>
+              <span className="text-brand-400 font-semibold">{worker?.loyaltyPoints || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Streak Weeks</span>
+              <span className="text-white font-medium">{worker?.streakWeeks || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Primary Payout</span>
+              <span className="text-white font-medium">{worker?.upiId ? 'UPI' : worker?.bankAccountNumber ? 'Bank' : 'Not set'}</span>
+            </div>
+          </div>
+          {!worker?.isKycVerified && (
+            <div className="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 text-xs">
+              Complete KYC to unlock faster payouts and higher limits.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -280,6 +441,19 @@ export function KycPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!/^\d{12}$/.test(form.aadhaarNumber)) {
+      toast.error('Aadhaar must be 12 digits');
+      return;
+    }
+    if (form.panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(form.panNumber)) {
+      toast.error('Invalid PAN format (e.g., ABCDE1234F)');
+      return;
+    }
+    if (form.ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(form.ifscCode)) {
+      toast.error('Invalid IFSC format');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await workerAPI.submitKyc(form);
@@ -306,10 +480,13 @@ export function KycPage() {
   }
 
   return (
-    <div className="animate-slide-in max-w-lg space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-white">KYC Verification</h1>
-        <p className="text-gray-400 text-sm mt-1">Required to receive claim payouts</p>
+    <div className="page-container animate-slide-in max-w-lg">
+      <div className="section-head">
+        <div>
+          <span className="section-chip mb-3">Identity And Payout</span>
+          <h1 className="font-display text-2xl font-bold text-white">KYC Verification</h1>
+          <p className="text-gray-400 text-sm mt-1">Required to receive claim payouts</p>
+        </div>
       </div>
       <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-sm text-yellow-300">
         ⚠️ Complete KYC to unlock instant payouts. Without KYC, approved claims will be held.
@@ -370,10 +547,13 @@ export function ReferralPage() {
   };
 
   return (
-    <div className="animate-slide-in max-w-2xl space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-white">Refer & Earn</h1>
-        <p className="text-gray-400 text-sm mt-1">Earn 100 loyalty points for every friend you refer</p>
+    <div className="page-container animate-slide-in max-w-2xl">
+      <div className="section-head">
+        <div>
+          <span className="section-chip mb-3">Growth Rewards</span>
+          <h1 className="font-display text-2xl font-bold text-white">Refer & Earn</h1>
+          <p className="text-gray-400 text-sm mt-1">Earn 100 loyalty points for every friend you refer</p>
+        </div>
       </div>
 
       <div className="card bg-gradient-to-br from-brand-500/15 to-brand-600/5 border-brand-500/30">

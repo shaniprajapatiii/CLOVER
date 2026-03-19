@@ -2,13 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap');
+
 @layer base {
   * { box-sizing: border-box; }
 
+  :root {
+    --surface-1: rgba(8, 14, 29, 0.84);
+    --surface-2: rgba(12, 20, 40, 0.9);
+    --surface-3: rgba(15, 27, 52, 0.96);
+    --line-soft: rgba(255, 255, 255, 0.08);
+  }
+
   body {
     @apply bg-dark-900 text-white font-sans antialiased;
-    background-image: radial-gradient(ellipse at 20% 20%, rgba(249,115,22,0.05) 0%, transparent 50%),
-                      radial-gradient(ellipse at 80% 80%, rgba(234,88,12,0.04) 0%, transparent 50%);
+    background-image:
+      radial-gradient(1200px circle at 12% -8%, rgba(29, 143, 255, 0.16), transparent 42%),
+      radial-gradient(900px circle at 88% -10%, rgba(14, 165, 233, 0.12), transparent 38%),
+      radial-gradient(1000px circle at 50% 120%, rgba(56, 189, 248, 0.08), transparent 46%),
+      linear-gradient(180deg, #040813 0%, #030611 100%);
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -19,41 +36,126 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl
-           transition-all duration-200 shadow-glow hover:shadow-glow-lg active:scale-95
+      @apply bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold px-6 py-3 rounded-xl
+        transition-all duration-300 shadow-glow hover:shadow-glow-lg hover:-translate-y-0.5 active:scale-95
            disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply bg-dark-700 hover:bg-dark-600 text-white font-semibold px-6 py-3 rounded-xl
-           border border-dark-500 hover:border-brand-500 transition-all duration-200
+      @apply bg-white/[0.03] hover:bg-white/[0.08] text-white font-semibold px-6 py-3 rounded-xl
+        border border-white/10 hover:border-brand-500/60 transition-all duration-300 hover:-translate-y-0.5
            active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply bg-transparent hover:bg-dark-700 text-gray-300 hover:text-white font-medium px-4 py-2 rounded-lg
+      @apply bg-transparent hover:bg-white/[0.06] text-gray-300 hover:text-white font-medium px-4 py-2 rounded-lg
            transition-all duration-200 active:scale-95;
   }
 
   .card {
-    @apply bg-dark-800 border border-dark-600 rounded-2xl p-6 shadow-card;
+      @apply rounded-2xl p-6 shadow-card backdrop-blur-lg;
+      background: linear-gradient(160deg, rgba(12, 20, 40, 0.94), rgba(7, 13, 28, 0.92));
+      border: 1px solid rgba(87, 127, 190, 0.24);
   }
 
   .card-hover {
-    @apply card hover:border-brand-500/50 hover:shadow-glow transition-all duration-300 cursor-pointer;
+      @apply card hover:border-brand-400/45 hover:shadow-glow transition-all duration-300 cursor-pointer hover:-translate-y-1;
   }
 
   .input-field {
-    @apply bg-dark-700 border border-dark-500 text-white placeholder-gray-500 rounded-xl px-4 py-3
-           focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20
+      @apply bg-white/[0.03] border border-white/10 text-white placeholder-gray-500 rounded-xl px-4 py-3
+        focus:outline-none focus:border-brand-500/70 focus:ring-2 focus:ring-brand-500/20
            transition-all duration-200 w-full;
+  }
+
+  /* Enhanced select dropdown styling */
+  select.input-field {
+      appearance: none;
+      background-image: 
+        linear-gradient(45deg, transparent 30%, currentColor 30%, currentColor 70%, transparent 70%),
+        linear-gradient(135deg, currentColor 40%, transparent 40%);
+      background-position: 
+        right 12px center,
+        right 7px center;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      padding-right: 32px;
+      cursor: pointer;
+  }
+
+  select.input-field:hover {
+      @apply border-brand-500/50;
+  }
+
+  select.input-field:focus {
+      @apply border-brand-500 ring-2 ring-brand-500/30 bg-white/[0.05];
+  }
+
+  select.input-field option {
+      @apply bg-dark-800 text-white;
+      padding: 8px 12px;
+  }
+
+  select.input-field option:checked {
+      @apply bg-brand-600 text-white;
+      background: linear-gradient(#1d8fff, #1d8fff);
+  }
+
+  /* Dropdown improvements for better UX */
+  select.input-field {
+      @apply text-base leading-tight;
+  }
+
+  select.input-field:disabled {
+      @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Form field styling */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-300;
+  }
+
+  .form-hint {
+    @apply text-xs text-gray-500 mt-1;
+  }
+
+  /* Field with label wrapper */
+  .form-field {
+    @apply space-y-2;
+  }
+
+  .form-field label {
+    @apply block text-sm font-medium text-gray-300;
+  }
+
+  .form-field textarea.input-field {
+    @apply resize-none;
+  }
+
+  .form-field input[type="range"] {
+    @apply accent-brand-500;
+  }
+
+  /* Better dropdown appearance on mobile */
+  @media (max-width: 640px) {
+    select.input-field {
+      font-size: 16px;
+      padding-right: 40px;
+      background-position: 
+        right 14px center,
+        right 9px center;
+    }
   }
 
   .badge {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold;
   }
 
-  .badge-green { @apply badge bg-green-500/15 text-green-400 border border-green-500/30; }
+  .badge-green { @apply badge bg-cyan-500/15 text-cyan-300 border border-cyan-400/30; }
   .badge-red { @apply badge bg-red-500/15 text-red-400 border border-red-500/30; }
   .badge-yellow { @apply badge bg-yellow-500/15 text-yellow-400 border border-yellow-500/30; }
   .badge-blue { @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/30; }
@@ -72,16 +174,59 @@
     @apply font-display text-2xl font-bold text-white;
   }
 
+  .section-head {
+    @apply card flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between;
+    background: linear-gradient(135deg, rgba(29, 143, 255, 0.16) 0%, rgba(14, 165, 233, 0.09) 25%, rgba(9, 15, 32, 0.92) 100%);
+  }
+
+  .section-chip {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-brand-300 border border-brand-400/30 bg-brand-500/10;
+  }
+
+  .nav-link {
+    @apply text-sm font-medium text-gray-300 hover:text-white transition-colors;
+  }
+
+  .footer-link {
+    @apply text-sm text-gray-400 hover:text-white transition-colors;
+  }
+
+  .dashboard-bg {
+    background-image:
+      radial-gradient(700px circle at 90% -30%, rgba(29, 143, 255, 0.16), transparent 44%),
+      radial-gradient(650px circle at -10% 10%, rgba(14, 165, 233, 0.1), transparent 40%);
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto space-y-6;
+  }
+
+  .tabs-shell {
+    @apply flex gap-2 bg-white/[0.03] border border-white/10 rounded-xl p-1 w-fit;
+  }
+
+  .tabs-btn {
+    @apply px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition-all;
+  }
+
+  .tabs-btn-active {
+    @apply tabs-btn bg-brand-500 text-white shadow-glow;
+  }
+
+  .soft-panel {
+    @apply bg-white/[0.04] border border-white/10 rounded-xl;
+  }
+
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-dark-700
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.05]
            transition-all duration-200 cursor-pointer font-medium;
   }
 
   .sidebar-link-active {
-    @apply sidebar-link bg-brand-500/15 text-brand-400 border border-brand-500/30 hover:bg-brand-500/20 hover:text-brand-300;
+    @apply sidebar-link bg-brand-500/15 text-brand-300 border border-brand-500/30 hover:bg-brand-500/20 hover:text-brand-200;
   }
 
-  .risk-bar-low { @apply bg-green-500; }
+  .risk-bar-low { @apply bg-cyan-500; }
   .risk-bar-medium { @apply bg-yellow-500; }
   .risk-bar-high { @apply bg-red-500; }
 }
@@ -93,7 +238,7 @@
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #1a1a26 25%, #22223a 50%, #1a1a26 75%);
+  background: linear-gradient(90deg, #111a2c 25%, #17243c 50%, #111a2c 75%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
@@ -105,8 +250,17 @@
 
 .animate-slide-in { animation: slideIn 0.4s ease forwards; }
 
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float-soft {
+  animation: floatSoft 4s ease-in-out infinite;
+}
+
 .gradient-text {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 50%, #fbbf24 100%);
+  background: linear-gradient(135deg, #1d8fff 0%, #0ea5e9 52%, #38bdf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

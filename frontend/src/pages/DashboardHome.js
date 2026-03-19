@@ -2,18 +2,56 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { analyticsAPI, weatherAPI } from '../services/api';
 import { useAuthStore } from '../store';
+import {
+  FiActivity,
+  FiAlertTriangle,
+  FiAward,
+  FiCloudRain,
+  FiCompass,
+  FiDroplet,
+  FiFileText,
+  FiShield,
+  FiSun,
+  FiTrendingUp,
+  FiUnlock,
+  FiWind,
+  FiZap,
+} from 'react-icons/fi';
 
 const STATUS_COLORS = {
   paid: 'badge-green', approved: 'badge-blue', auto_triggered: 'badge-orange',
   under_review: 'badge-yellow', rejected: 'badge-red', fraud_flagged: 'badge-red', submitted: 'badge-gray'
 };
 
-const TriggerEmoji = { extreme_heat: '🔥', heavy_rain: '🌧️', flood: '🌊', severe_pollution: '😷', curfew: '🚫', strike: '✊', platform_outage: '📵', cyclone: '🌀', hailstorm: '🌨️', dense_fog: '🌫️', cold_wave: '🥶' };
+const TRIGGER_ICONS = {
+  extreme_heat: FiSun,
+  heavy_rain: FiCloudRain,
+  flood: FiDroplet,
+  severe_pollution: FiActivity,
+  curfew: FiAlertTriangle,
+  strike: FiCompass,
+  platform_outage: FiZap,
+  cyclone: FiWind,
+  hailstorm: FiCloudRain,
+  dense_fog: FiCloudRain,
+  cold_wave: FiWind,
+};
 
-function StatCard({ icon, label, value, sub, color = 'text-white' }) {
+const getWeatherIcon = (w) => {
+  if (!w) return FiSun;
+  if (w.temp >= 42) return FiSun;
+  if (w.rainfall > 64) return FiCloudRain;
+  if (w.aqi > 300) return FiActivity;
+  if (w.windSpeed > 50) return FiWind;
+  return FiSun;
+};
+
+function StatCard({ Icon, label, value, sub, color = 'text-white' }) {
   return (
     <div className="card flex gap-4 items-start">
-      <div className="text-3xl">{icon}</div>
+      <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 text-brand-300 flex items-center justify-center shrink-0">
+        <Icon className="text-xl" />
+      </div>
       <div>
         <p className="text-gray-400 text-sm">{label}</p>
         <p className={`font-display text-2xl font-bold ${color}`}>{value}</p>
@@ -58,13 +96,14 @@ export default function DashboardHome() {
   const daysUntilExpiry = policy ? Math.ceil((new Date(policy.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="page-container animate-slide-in">
       {/* Welcome Banner */}
-      <div className="card bg-gradient-to-r from-brand-500/15 via-brand-600/10 to-transparent border-brand-500/30">
+      <div className="section-head">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
+            <span className="section-chip mb-3">Live Protection Snapshot</span>
             <h1 className="font-display text-2xl font-bold text-white">
-              नमस्ते, {worker?.name?.split(' ')[0]}! 👋
+              नमस्ते, {worker?.name?.split(' ')[0]}
             </h1>
             <p className="text-gray-400 mt-1">
               {policy ? `Your ${policy.planName} is active · ${daysUntilExpiry} days remaining` : 'You are not currently covered. Get protected now.'}
@@ -82,7 +121,7 @@ export default function DashboardHome() {
       {/* Weather Alert Banner */}
       {alerts.length > 0 && (
         <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
-          <span className="text-2xl">⚠️</span>
+          <FiAlertTriangle className="text-xl text-red-300 mt-0.5" />
           <div>
             <p className="text-red-300 font-semibold text-sm">Active Weather Alert in {worker?.city}</p>
             <p className="text-red-400/70 text-xs mt-0.5">{alerts[0].eventType?.replace(/_/g,' ')} — {alerts[0].severity} severity detected. Your claim may be auto-triggered.</p>
@@ -93,10 +132,10 @@ export default function DashboardHome() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon="🛡️" label="Coverage Amount" value={policy ? `₹${policy.coverageAmount.toLocaleString()}` : '—'} sub={policy ? `₹${policy.weeklyPremium}/week` : 'No active policy'} color="text-brand-400" />
-        <StatCard icon="💰" label="Total Paid Out" value={`₹${(dashboard?.totalPaid || 0).toLocaleString()}`} sub={`${dashboard?.totalClaims || 0} total claims`} color="text-green-400" />
-        <StatCard icon="📈" label="Approval Rate" value={`${dashboard?.approvalRate || 0}%`} sub="Claims approved" color="text-blue-400" />
-        <StatCard icon="⭐" label="Loyalty Points" value={worker?.loyaltyPoints || 0} sub={`${worker?.streakWeeks || 0} week streak`} color="text-yellow-400" />
+        <StatCard Icon={FiShield} label="Coverage Amount" value={policy ? `₹${policy.coverageAmount.toLocaleString()}` : '—'} sub={policy ? `₹${policy.weeklyPremium}/week` : 'No active policy'} color="text-brand-300" />
+        <StatCard Icon={FiZap} label="Total Paid Out" value={`₹${(dashboard?.totalPaid || 0).toLocaleString()}`} sub={`${dashboard?.totalClaims || 0} total claims`} color="text-cyan-300" />
+        <StatCard Icon={FiTrendingUp} label="Approval Rate" value={`${dashboard?.approvalRate || 0}%`} sub="Claims approved" color="text-blue-300" />
+        <StatCard Icon={FiAward} label="Loyalty Points" value={worker?.loyaltyPoints || 0} sub={`${worker?.streakWeeks || 0} week streak`} color="text-amber-300" />
       </div>
 
       {/* Policy Card + Risk Score */}
@@ -110,7 +149,7 @@ export default function DashboardHome() {
           {policy ? (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-brand-500/20 rounded-xl flex items-center justify-center text-2xl">🛡️</div>
+                <div className="w-12 h-12 bg-brand-500/20 rounded-xl flex items-center justify-center text-brand-300"><FiShield className="text-2xl" /></div>
                 <div>
                   <p className="font-bold text-white">{policy.planName}</p>
                   <p className="text-gray-400 text-sm">{policy.policyNumber}</p>
@@ -124,7 +163,7 @@ export default function DashboardHome() {
                   { l: 'Expires', v: new Date(policy.endDate).toLocaleDateString('en-IN') },
                   { l: 'Triggers', v: `${policy.coverageTriggers?.length || 0} events` }
                 ].map(({ l, v }) => (
-                  <div key={l} className="bg-dark-700 rounded-xl p-3">
+                  <div key={l} className="bg-white/[0.04] border border-white/10 rounded-xl p-3">
                     <p className="text-gray-500 text-xs">{l}</p>
                     <p className="text-white font-semibold text-sm mt-0.5">{v}</p>
                   </div>
@@ -136,14 +175,14 @@ export default function DashboardHome() {
                   <span>Week Coverage</span>
                   <span>{daysUntilExpiry} days left</span>
                 </div>
-                <div className="w-full bg-dark-700 rounded-full h-2">
+                <div className="w-full bg-white/[0.06] rounded-full h-2">
                   <div className="bg-brand-500 h-2 rounded-full transition-all" style={{ width: `${Math.max(0, Math.min(100, (daysUntilExpiry / 7) * 100))}%` }} />
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-center py-10">
-              <div className="text-5xl mb-3">🔓</div>
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 mx-auto mb-3 text-brand-300 flex items-center justify-center"><FiUnlock className="text-3xl" /></div>
               <p className="text-gray-400 mb-4">You're not currently covered</p>
               <Link to="/dashboard/policy" className="btn-primary text-sm">Buy a Policy Now</Link>
             </div>
@@ -158,7 +197,7 @@ export default function DashboardHome() {
               <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a26" strokeWidth="12" />
                 <circle cx="60" cy="60" r="50" fill="none"
-                  stroke={worker?.riskCategory === 'low' ? '#22c55e' : worker?.riskCategory === 'high' ? '#ef4444' : '#f59e0b'}
+                  stroke={worker?.riskCategory === 'low' ? '#1d8fff' : worker?.riskCategory === 'high' ? '#ef4444' : '#f59e0b'}
                   strokeWidth="12" strokeLinecap="round"
                   strokeDasharray={`${(worker?.riskScore || 0.5) * 314} 314`} />
               </svg>
@@ -195,8 +234,11 @@ export default function DashboardHome() {
           ) : (
             <div className="space-y-3">
               {recentClaims.map(claim => (
-                <div key={claim._id} className="flex items-center gap-3 p-3 bg-dark-700 rounded-xl">
-                  <span className="text-xl">{TriggerEmoji[claim.triggerType] || '📋'}</span>
+                <div key={claim._id} className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/10 rounded-xl">
+                  {(() => {
+                    const TriggerIcon = TRIGGER_ICONS[claim.triggerType] || FiFileText;
+                    return <TriggerIcon className="text-lg text-brand-300" />;
+                  })()}
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium capitalize">{claim.triggerType?.replace(/_/g,' ')}</p>
                     <p className="text-gray-500 text-xs">{new Date(claim.createdAt).toLocaleDateString('en-IN')}</p>
@@ -219,30 +261,37 @@ export default function DashboardHome() {
           </div>
           {weather ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-dark-700 rounded-xl">
-                <div className="text-5xl">{weather.weather?.temp >= 42 ? '🔥' : weather.weather?.rainfall > 64 ? '🌧️' : weather.weather?.aqi > 300 ? '😷' : '☀️'}</div>
+              {(() => {
+                const WeatherIcon = getWeatherIcon(weather.weather);
+                return (
+              <div className="flex items-center gap-4 p-4 bg-white/[0.04] border border-white/10 rounded-xl">
+                <div className="w-16 h-16 rounded-2xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center text-brand-300">
+                  <WeatherIcon className="text-4xl" />
+                </div>
                 <div>
                   <p className="text-3xl font-bold text-white">{Math.round(weather.weather?.temp || 0)}°C</p>
                   <p className="text-gray-400 text-sm capitalize">{weather.weather?.description}</p>
                 </div>
               </div>
+                );
+              })()}
               <div className="grid grid-cols-3 gap-3 text-sm">
-                <div className="bg-dark-700 rounded-xl p-3 text-center">
+                <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 text-center">
                   <p className="text-gray-400 text-xs">Humidity</p>
                   <p className="font-bold text-white">{weather.weather?.humidity}%</p>
                 </div>
-                <div className="bg-dark-700 rounded-xl p-3 text-center">
+                <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 text-center">
                   <p className="text-gray-400 text-xs">AQI</p>
-                  <p className={`font-bold ${weather.weather?.aqi > 300 ? 'text-red-400' : weather.weather?.aqi > 150 ? 'text-yellow-400' : 'text-green-400'}`}>{weather.weather?.aqi}</p>
+                  <p className={`font-bold ${weather.weather?.aqi > 300 ? 'text-red-400' : weather.weather?.aqi > 150 ? 'text-yellow-400' : 'text-cyan-300'}`}>{weather.weather?.aqi}</p>
                 </div>
-                <div className="bg-dark-700 rounded-xl p-3 text-center">
+                <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 text-center">
                   <p className="text-gray-400 text-xs">Wind</p>
                   <p className="font-bold text-white">{Math.round(weather.weather?.windSpeed || 0)} km/h</p>
                 </div>
               </div>
               {weather.triggers?.length > 0 && (
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm">
-                  <p className="text-red-300 font-medium">⚠️ {weather.triggers.length} trigger(s) active — claims may be triggered automatically</p>
+                  <p className="text-red-300 font-medium inline-flex items-center gap-2"><FiAlertTriangle /> {weather.triggers.length} trigger(s) active — claims may be triggered automatically</p>
                 </div>
               )}
             </div>

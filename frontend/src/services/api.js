@@ -12,7 +12,7 @@ const api = axios.create({
 // Request interceptor - attach token
 api.interceptors.request.use(
   (config) => {
-    const auth = JSON.parse(localStorage.getItem('gigshield-auth') || '{}');
+    const auth = JSON.parse(localStorage.getItem('clover-auth') || '{}');
     const token = auth?.state?.token;
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
@@ -26,7 +26,7 @@ api.interceptors.response.use(
   (error) => {
     const msg = error.response?.data?.message || 'Something went wrong';
     if (error.response?.status === 401) {
-      localStorage.removeItem('gigshield-auth');
+      localStorage.removeItem('clover-auth');
       window.location.href = '/login';
     } else if (error.response?.status !== 400) {
       toast.error(msg);

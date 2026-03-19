@@ -49,11 +49,24 @@ export default function RegisterPage() {
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const handleSubmit = async () => {
+    if (!/^\d{10}$/.test(form.phone)) {
+      toast.error('Enter a valid 10-digit mobile number');
+      return;
+    }
+    if (form.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    if (form.averageWeeklyEarnings < 500) {
+      toast.error('Weekly earnings should be at least ₹500');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await authAPI.register(form);
       loginStore(res.data.worker, res.data.token);
-      toast.success('Welcome to GigShield! 🎉');
+      toast.success('Welcome to CLOVER! 🎉');
       navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
@@ -69,7 +82,7 @@ export default function RegisterPage() {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Mobile Number *</label>
-        <input type="tel" className="input-field" placeholder="9876543210" maxLength={10} value={form.phone} onChange={e => set('phone', e.target.value)} />
+        <input type="tel" className="input-field" placeholder="9876543210" maxLength={10} value={form.phone} onChange={e => set('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Email (optional)</label>
@@ -78,10 +91,11 @@ export default function RegisterPage() {
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Password *</label>
         <input type="password" className="input-field" placeholder="Create a strong password" value={form.password} onChange={e => set('password', e.target.value)} />
+        <p className="text-xs text-gray-500 mt-1">Use at least 8 characters for better account security.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Referral Code (optional)</label>
-        <input className="input-field" placeholder="e.g. GS7X9A" value={form.referralCode} onChange={e => set('referralCode', e.target.value.toUpperCase())} />
+        <input className="input-field" placeholder="e.g. CL7X9A" value={form.referralCode} onChange={e => set('referralCode', e.target.value.toUpperCase())} />
       </div>
     </div>,
 
@@ -124,7 +138,7 @@ export default function RegisterPage() {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">City *</label>
-        <select className="input-field" value={form.city} onChange={e => set('city', e.target.value)}>
+        <select className="input-field" value={form.city} onChange={e => set('city', e.target.value)} required>
           <option value="">Select your city</option>
           {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -188,11 +202,30 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4 py-10">
       <div className="absolute top-20 left-20 w-64 h-64 bg-brand-500/6 rounded-full blur-3xl" />
-      <div className="w-full max-w-lg relative z-10">
+      <div className="absolute bottom-10 right-10 w-64 h-64 bg-brand-600/10 rounded-full blur-3xl" />
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 relative z-10">
+        <div className="hidden lg:flex card flex-col justify-between">
+          <div>
+            <span className="section-chip mb-4">2 minute onboarding</span>
+            <h2 className="font-display text-4xl font-bold leading-tight">Create your protection profile once. Stay covered every week.</h2>
+            <p className="text-gray-300 mt-4">Your data helps price premiums fairly based on your city, platform, and work pattern.</p>
+          </div>
+          <div className="space-y-3">
+            {[
+              'Personalized weekly premiums',
+              'Auto-triggered weather claims',
+              'Instant UPI payouts after approval'
+            ].map((item) => (
+              <div key={item} className="bg-white/[0.04] border border-white/10 rounded-xl p-3 text-sm text-gray-200">✓ {item}</div>
+            ))}
+          </div>
+        </div>
+
+      <div className="w-full max-w-lg lg:max-w-none mx-auto">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center font-bold">G</div>
-            <span className="font-display text-2xl font-bold text-white">GigShield</span>
+            <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center font-bold">C</div>
+            <span className="font-display text-2xl font-bold text-white">CLOVER</span>
           </Link>
           <h1 className="font-display text-2xl font-bold text-white">Create your account</h1>
           <p className="text-gray-400 text-sm mt-1">Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
@@ -220,6 +253,7 @@ export default function RegisterPage() {
         <p className="text-center text-gray-500 text-sm mt-6">
           Already have an account? <Link to="/login" className="text-brand-400 hover:text-brand-300">Sign in</Link>
         </p>
+      </div>
       </div>
     </div>
   );

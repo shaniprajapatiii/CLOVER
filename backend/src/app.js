@@ -56,7 +56,7 @@ app.use('/api/risk', require('./routes/riskRoutes'));
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'GigShield API is running',
+    message: 'CLOVER API is running',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });

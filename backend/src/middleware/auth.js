@@ -12,7 +12,7 @@ exports.protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gigshield_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'clover_secret');
     const worker = await Worker.findById(decoded.id).select('-password');
 
     if (!worker) {
@@ -41,7 +41,7 @@ exports.adminOnly = (req, res, next) => {
 };
 
 exports.generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'gigshield_secret', {
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'clover_secret', {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };

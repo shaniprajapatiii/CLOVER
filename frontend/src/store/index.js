@@ -10,12 +10,12 @@ export const useAuthStore = create(
 
       login: (worker, token) => set({ worker, token, isAuthenticated: true }),
       logout: () => {
-        localStorage.removeItem('gigshield-auth');
+        localStorage.removeItem('clover-auth');
         set({ worker: null, token: null, isAuthenticated: false });
       },
       updateWorker: (updates) => set(state => ({ worker: { ...state.worker, ...updates } })),
     }),
-    { name: 'gigshield-auth', partialize: (state) => ({ token: state.token, worker: state.worker, isAuthenticated: state.isAuthenticated }) }
+    { name: 'clover-auth', partialize: (state) => ({ token: state.token, worker: state.worker, isAuthenticated: state.isAuthenticated }) }
   )
 );
 

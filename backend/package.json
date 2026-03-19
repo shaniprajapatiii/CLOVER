@@ -1,7 +1,7 @@
 {
-  "name": "gigshield-backend",
+  "name": "clover-backend",
   "version": "1.0.0",
-  "description": "GigShield AI-Powered Parametric Insurance Platform - Backend",
+  "description": "CLOVER AI-Powered Parametric Insurance Platform - Backend",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

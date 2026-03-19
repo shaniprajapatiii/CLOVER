@@ -2,7 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/gigshield';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/clover';
 
 const seed = async () => {
   await mongoose.connect(MONGODB_URI);
@@ -19,7 +19,7 @@ const seed = async () => {
 
   // Create admin
   const admin = await Worker.create({
-    name: 'Admin User', phone: '9000000000', email: 'admin@gigshield.in',
+    name: 'Admin User', phone: '9000000000', email: 'admin@clover.in',
     password: 'Admin@123', platform: 'zomato', deliverySegment: 'food',
     vehicleType: 'motorcycle', city: 'Mumbai', role: 'admin',
     averageWeeklyEarnings: 5000, isKycVerified: true

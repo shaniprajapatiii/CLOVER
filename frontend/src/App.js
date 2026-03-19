@@ -13,6 +13,7 @@ import ClaimsPage from './pages/ClaimsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import { WeatherPage, NotificationsPage, ProfilePage, KycPage, ReferralPage } from './pages/OtherPages';
 import AdminPage from './pages/AdminPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, worker } = useAuthStore();
@@ -34,7 +35,7 @@ export default function App() {
         toastOptions={{
           duration: 4000,
           style: { background: '#1a1a26', color: '#fff', border: '1px solid #2d2d45', borderRadius: '12px', fontSize: '14px' },
-          success: { iconTheme: { primary: '#f97316', secondary: '#fff' } },
+          success: { iconTheme: { primary: '#1d8fff', secondary: '#fff' } },
           error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
         }}
       />
@@ -54,7 +55,7 @@ export default function App() {
           <Route path="referral" element={<ReferralPage />} />
           <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

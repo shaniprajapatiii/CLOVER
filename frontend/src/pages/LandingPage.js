@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FiBarChart2, FiCloudRain, FiCpu, FiDollarSign, FiMenu, FiShield, FiX, FiZap } from 'react-icons/fi';
 
 const STATS = [
   { label: 'Gig Workers Protected', value: '2.4L+' },
@@ -9,12 +10,12 @@ const STATS = [
 ];
 
 const FEATURES = [
-  { icon: '🤖', title: 'AI Risk Assessment', desc: 'Dynamic weekly premiums calculated using ML models trained on 50+ risk factors including weather history, city risk, and work patterns.' },
-  { icon: '⚡', title: 'Auto-Triggered Claims', desc: 'No paperwork. When our sensors detect extreme heat, flooding, or AQI spikes in your city, claims are triggered automatically.' },
-  { icon: '🛡️', title: 'Fraud Detection', desc: 'Multi-layer AI fraud detection analyzes location, history, and event data to protect the pool from bad actors.' },
-  { icon: '💸', title: 'Instant UPI Payouts', desc: 'Approved claims are transferred to your UPI/bank account within 2 hours — often before you finish your next delivery.' },
-  { icon: '📊', title: 'Income Analytics', desc: 'Track your earnings protection, risk score trends, and payout history on a beautifully designed dashboard.' },
-  { icon: '🌦️', title: 'Real-time Weather Alerts', desc: 'Get notified before disruptions hit. Know when your city is under a weather alert so you can plan your day.' },
+  { Icon: FiCpu, title: 'AI Risk Assessment', desc: 'Dynamic weekly premiums calculated using ML models trained on 50+ risk factors including weather history, city risk, and work patterns.' },
+  { Icon: FiZap, title: 'Auto-Triggered Claims', desc: 'No paperwork. When our sensors detect extreme heat, flooding, or AQI spikes in your city, claims are triggered automatically.' },
+  { Icon: FiShield, title: 'Fraud Detection', desc: 'Multi-layer AI fraud detection analyzes location, history, and event data to protect the pool from bad actors.' },
+  { Icon: FiDollarSign, title: 'Instant UPI Payouts', desc: 'Approved claims are transferred to your UPI/bank account within 2 hours — often before you finish your next delivery.' },
+  { Icon: FiBarChart2, title: 'Income Analytics', desc: 'Track your earnings protection, risk score trends, and payout history on a beautifully designed dashboard.' },
+  { Icon: FiCloudRain, title: 'Real-time Weather Alerts', desc: 'Get notified before disruptions hit. Know when your city is under a weather alert so you can plan your day.' },
 ];
 
 const PLATFORMS = ['Zomato', 'Swiggy', 'Zepto', 'Blinkit', 'Amazon', 'Flipkart', 'Dunzo'];
@@ -28,6 +29,15 @@ const HOW_IT_WORKS = [
 
 export default function LandingPage() {
   const [activePlatform, setActivePlatform] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const NAV_LINKS = [
+    { label: 'Features', href: '#features' },
+    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'Support', href: '#footer' },
+  ];
+
   useEffect(() => {
     const t = setInterval(() => setActivePlatform(p => (p + 1) % PLATFORMS.length), 2000);
     return () => clearInterval(t);
@@ -36,21 +46,55 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-dark-900 overflow-x-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-900/80 backdrop-blur-xl border-b border-dark-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-sm font-bold">G</div>
-            <span className="font-display text-xl font-bold text-white">GigShield</span>
-          </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-900/70 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link to="/login" className="btn-ghost text-sm">Sign In</Link>
+            <a href="#top" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-sm font-bold">C</div>
+              <span className="font-display text-xl font-bold text-white">CLOVER</span>
+            </a>
+            <span className="hidden lg:inline-flex section-chip py-1 px-2.5 text-[11px]">AI-Driven Parametric Cover</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-6">
+            {NAV_LINKS.map((item) => (
+              <a key={item.href} href={item.href} className="nav-link">{item.label}</a>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link to="/login" className="btn-ghost text-sm hidden sm:inline-flex">Sign In</Link>
             <Link to="/register" className="btn-primary text-sm py-2 px-4">Get Protected</Link>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="md:hidden btn-ghost p-2"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <FiX className="text-lg" /> : <FiMenu className="text-lg" />}
+            </button>
           </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/10 bg-dark-900/95 backdrop-blur-xl px-4 py-4 space-y-3">
+            {NAV_LINKS.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block nav-link"
+              >
+                {item.label}
+              </a>
+            ))}
+            <Link to="/login" className="block nav-link" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-24 px-4 relative">
+      <section id="top" className="pt-32 pb-24 px-4 relative">
         <div className="absolute inset-0 bg-hero-pattern opacity-30 pointer-events-none" />
         <div className="absolute top-20 right-10 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-10 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl pointer-events-none" />
@@ -68,7 +112,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-            Extreme heat, floods, pollution — when disruptions stop your deliveries, GigShield automatically pays you within 2 hours. No claim forms. No waiting.
+            Extreme heat, floods, pollution — when disruptions stop your deliveries, CLOVER automatically pays you within 2 hours. No claim forms. No waiting.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -109,7 +153,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-24 px-4">
+      <section id="features" className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-display text-4xl font-bold text-white mb-4">Built for the realities of gig work</h2>
@@ -118,7 +162,9 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f) => (
               <div key={f.title} className="card-hover group">
-                <div className="text-4xl mb-4">{f.icon}</div>
+                <div className="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/25 flex items-center justify-center mb-4">
+                  <f.Icon className="text-2xl text-brand-300" />
+                </div>
                 <h3 className="font-display text-lg font-bold text-white mb-2 group-hover:text-brand-400 transition-colors">{f.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
               </div>
@@ -128,10 +174,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 px-4 bg-dark-800/30">
+      <section id="how-it-works" className="py-24 px-4 bg-dark-800/30">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-display text-4xl font-bold text-white mb-4">How GigShield Works</h2>
+            <h2 className="font-display text-4xl font-bold text-white mb-4">How CLOVER Works</h2>
             <p className="text-gray-400 text-lg">Simple. Fast. Automated.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -152,7 +198,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-24 px-4">
+      <section id="pricing" className="py-24 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-display text-4xl font-bold text-white mb-4">Simple weekly pricing</h2>
@@ -183,7 +229,9 @@ export default function LandingPage() {
       <section className="py-24 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <div className="card border-brand-500/30 bg-gradient-to-b from-brand-500/5 to-transparent">
-            <div className="text-5xl mb-4">🛡️</div>
+            <div className="w-16 h-16 rounded-2xl bg-brand-500/15 border border-brand-500/35 text-brand-300 mx-auto mb-4 flex items-center justify-center">
+              <FiShield className="text-3xl" />
+            </div>
             <h2 className="font-display text-4xl font-bold text-white mb-4">Don't work unprotected</h2>
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">Every day you work without coverage is a day a single storm can erase your week's income. Join 2.4 lakh+ gig workers who've chosen to protect themselves.</p>
             <Link to="/register" className="btn-primary text-base py-4 px-10 inline-block">
@@ -194,17 +242,44 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-dark-700 py-10 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-brand-500 rounded flex items-center justify-center text-xs font-bold">G</div>
-            <span className="font-display font-bold text-white">GigShield</span>
+      <footer id="footer" className="border-t border-white/10 py-14 px-4 bg-dark-800/45 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 bg-brand-500 rounded-md flex items-center justify-center text-xs font-bold">C</div>
+              <span className="font-display font-bold text-white text-lg">CLOVER</span>
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              AI-powered parametric income protection for India&apos;s gig workers. Built for speed, fairness, and zero-paper claims.
+            </p>
+            <p className="text-gray-500 text-xs mt-4">© 2026 CLOVER. All rights reserved.</p>
           </div>
-          <p className="text-gray-600 text-sm">© 2025 GigShield. AI-Powered Parametric Insurance for India's Gig Economy.</p>
-          <div className="flex gap-6 text-gray-500 text-sm">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Support</a>
+
+          <div>
+            <p className="text-white font-semibold mb-4">Product</p>
+            <div className="space-y-2">
+              <a href="#features" className="footer-link">Core Features</a>
+              <a href="#pricing" className="footer-link block">Pricing Plans</a>
+              <a href="#how-it-works" className="footer-link block">How It Works</a>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-white font-semibold mb-4">Company</p>
+            <div className="space-y-2">
+              <a href="#" className="footer-link block">Privacy Policy</a>
+              <a href="#" className="footer-link block">Terms of Service</a>
+              <a href="#" className="footer-link block">Help Center</a>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-white font-semibold mb-4">Get Started</p>
+            <p className="text-gray-400 text-sm mb-4">Create your profile and get covered in under 2 minutes.</p>
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
+              <Link to="/register" className="btn-primary text-sm text-center py-2.5">Start Protection</Link>
+              <Link to="/login" className="btn-secondary text-sm text-center py-2.5">Open Dashboard</Link>
+            </div>
           </div>
         </div>
       </footer>

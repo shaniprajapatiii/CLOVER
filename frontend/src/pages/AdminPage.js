@@ -11,22 +11,58 @@ export default function AdminPage() {
   const [tab, setTab] = useState('overview');
   const [simulateForm, setSimulateForm] = useState({ city: 'Mumbai', eventType: 'heavy_rain', severity: 'high' });
   const [simulating, setSimulating] = useState(false);
+  const [query, setQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadAdminData = async () => {
+    const [anaRes, claimsRes, workersRes] = await Promise.all([
+      analyticsAPI.getAdminAnalytics(),
+      claimAPI.adminGetAll({ limit: 20 }),
+      adminAPI.getWorkers({ limit: 20 })
+    ]);
+    setAnalytics(anaRes.data.analytics);
+    setClaims(claimsRes.data.claims);
+    setWorkers(workersRes.data.workers);
+  };
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [anaRes, claimsRes, workersRes] = await Promise.all([
-          analyticsAPI.getAdminAnalytics(),
-          claimAPI.adminGetAll({ limit: 20 }),
-          adminAPI.getWorkers({ limit: 20 })
-        ]);
-        setAnalytics(anaRes.data.analytics);
-        setClaims(claimsRes.data.claims);
-        setWorkers(workersRes.data.workers);
+        await loadAdminData();
       } catch { } finally { setLoading(false); }
     };
     load();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadAdminData();
+      toast.success('Admin data refreshed');
+    } catch {
+      toast.error('Could not refresh admin data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const filteredClaims = claims.filter((claim) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return [
+      claim.claimNumber,
+      claim.triggerType,
+      claim.status,
+      claim.workerId?.name,
+      claim.workerId?.city,
+    ].join(' ').toLowerCase().includes(q);
+  });
+
+  const filteredWorkers = workers.filter((w) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return [w.name, w.city, w.platform, w.riskCategory].join(' ').toLowerCase().includes(q);
+  });
 
   const handleReviewClaim = async (id, action) => {
     try {
@@ -52,16 +88,29 @@ export default function AdminPage() {
   if (loading) return <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="card h-32 skeleton" />)}</div>;
 
   return (
-    <div className="space-y-6 animate-slide-in">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-white">Admin Panel</h1>
-        <p className="text-gray-400 text-sm mt-1">Platform management and analytics</p>
+    <div className="page-container animate-slide-in">
+      <div className="section-head">
+        <div>
+          <span className="section-chip mb-3">Operations Console</span>
+          <h1 className="font-display text-2xl font-bold text-white">Admin Panel</h1>
+          <p className="text-gray-400 text-sm mt-1">Platform management and analytics</p>
+        </div>
+        <button onClick={handleRefresh} className="btn-secondary text-sm py-2 px-3" disabled={refreshing}>
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
-      <div className="flex flex-wrap gap-2 bg-dark-800 border border-dark-600 rounded-xl p-1 w-fit">
+      <input
+        className="input-field"
+        placeholder="Search claims/workers by name, city, status, trigger"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+
+      <div className="tabs-shell">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${tab === t ? 'bg-brand-500 text-white' : 'text-gray-400 hover:text-white'}`}>
+            className={tab === t ? 'tabs-btn-active capitalize' : 'tabs-btn capitalize'}>
             {t === 'simulate' ? '⚡ Simulate' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -99,7 +148,7 @@ export default function AdminPage() {
                   <XAxis dataKey="_id" stroke="#6b7280" tick={{ fontSize: 11 }} />
                   <YAxis stroke="#6b7280" tick={{ fontSize: 11 }} />
                   <Tooltip contentStyle={{ background: '#1a1a26', border: '1px solid #2d2d45', borderRadius: 12 }} />
-                  <Bar dataKey="count" name="Workers" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" name="Workers" fill="#22c55e" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -136,7 +185,7 @@ export default function AdminPage() {
               </button>
             ))}
           </div>
-          {claims.map(claim => (
+          {filteredClaims.map(claim => (
             <div key={claim._id} className="card">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -171,7 +220,7 @@ export default function AdminPage() {
 
       {tab === 'workers' && (
         <div className="space-y-3">
-          {workers.map(w => (
+          {filteredWorkers.map(w => (
             <div key={w._id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-brand-500/20 rounded-full flex items-center justify-center font-bold text-brand-400">{w.name?.[0]}</div>
@@ -203,22 +252,22 @@ export default function AdminPage() {
             <p className="text-gray-400 text-sm mb-6">Trigger a simulated weather event to test automatic claim processing across all active policies in a city.</p>
             <form onSubmit={handleSimulate} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-300 mb-1">City</label>
-                <select className="input-field" value={simulateForm.city} onChange={e => setSimulateForm(f => ({ ...f, city: e.target.value }))}>
+                <label className="block text-sm font-medium text-gray-300 mb-2">City *</label>
+                <select className="input-field" value={simulateForm.city} onChange={e => setSimulateForm(f => ({ ...f, city: e.target.value }))} required>
                   {['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">Event Type</label>
-                <select className="input-field" value={simulateForm.eventType} onChange={e => setSimulateForm(f => ({ ...f, eventType: e.target.value }))}>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Event Type *</label>
+                <select className="input-field" value={simulateForm.eventType} onChange={e => setSimulateForm(f => ({ ...f, eventType: e.target.value }))} required>
                   {['heavy_rain', 'extreme_heat', 'severe_pollution', 'flood', 'cyclone', 'curfew', 'strike', 'platform_outage'].map(t => (
                     <option key={t} value={t}>{t.replace(/_/g,' ')}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">Severity</label>
-                <select className="input-field" value={simulateForm.severity} onChange={e => setSimulateForm(f => ({ ...f, severity: e.target.value }))}>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Severity *</label>
+                <select className="input-field" value={simulateForm.severity} onChange={e => setSimulateForm(f => ({ ...f, severity: e.target.value }))} required>
                   {['low', 'moderate', 'high', 'extreme'].map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>

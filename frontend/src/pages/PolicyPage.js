@@ -2,20 +2,49 @@ import React, { useEffect, useState } from 'react';
 import { policyAPI, riskAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store';
+import {
+  FiActivity,
+  FiAlertTriangle,
+  FiCheck,
+  FiCheckCircle,
+  FiCloudRain,
+  FiCompass,
+  FiDroplet,
+  FiFileText,
+  FiFolder,
+  FiShield,
+  FiStar,
+  FiUnlock,
+  FiWind,
+} from 'react-icons/fi';
 
-const PLAN_ICONS = { basic: '🔵', standard: '🟠', premium: '⭐' };
+const PLAN_ICONS = { basic: FiShield, standard: FiActivity, premium: FiStar };
 const TRIGGER_LABELS = {
-  extreme_heat: '🔥 Extreme Heat (>42°C)',
-  heavy_rain: '🌧️ Heavy Rain (>64mm/hr)',
-  severe_pollution: '😷 Severe Pollution (AQI>301)',
-  flood: '🌊 Flooding',
-  curfew: '🚫 Curfew / Bandh',
-  strike: '✊ City Strike',
-  platform_outage: '📵 Platform Outage',
-  cyclone: '🌀 Cyclone',
-  hailstorm: '🌨️ Hailstorm',
-  dense_fog: '🌫️ Dense Fog',
-  cold_wave: '🥶 Cold Wave'
+  extreme_heat: 'Extreme Heat (>42°C)',
+  heavy_rain: 'Heavy Rain (>64mm/hr)',
+  severe_pollution: 'Severe Pollution (AQI>301)',
+  flood: 'Flooding',
+  curfew: 'Curfew / Bandh',
+  strike: 'City Strike',
+  platform_outage: 'Platform Outage',
+  cyclone: 'Cyclone',
+  hailstorm: 'Hailstorm',
+  dense_fog: 'Dense Fog',
+  cold_wave: 'Cold Wave'
+};
+
+const TRIGGER_ICONS = {
+  extreme_heat: FiActivity,
+  heavy_rain: FiCloudRain,
+  severe_pollution: FiActivity,
+  flood: FiDroplet,
+  curfew: FiAlertTriangle,
+  strike: FiCompass,
+  platform_outage: FiActivity,
+  cyclone: FiWind,
+  hailstorm: FiCloudRain,
+  dense_fog: FiCloudRain,
+  cold_wave: FiWind,
 };
 
 export default function PolicyPage() {
@@ -24,31 +53,48 @@ export default function PolicyPage() {
   const [myPolicies, setMyPolicies] = useState([]);
   const [risk, setRisk] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [purchasing, setPurchasing] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [tab, setTab] = useState('plans');
 
   const activePolicy = myPolicies.find(p => p.status === 'active');
 
+  const loadData = async () => {
+    const [plansRes, policiesRes, riskRes] = await Promise.all([
+      policyAPI.getPlans(), policyAPI.getAll(), riskAPI.assess()
+    ]);
+    setPlans(plansRes.data.plans);
+    setMyPolicies(policiesRes.data.policies);
+    setRisk(riskRes.data);
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
-        const [plansRes, policiesRes, riskRes] = await Promise.all([
-          policyAPI.getPlans(), policyAPI.getAll(), riskAPI.assess()
-        ]);
-        setPlans(plansRes.data.plans);
-        setMyPolicies(policiesRes.data.policies);
-        setRisk(riskRes.data);
+        await loadData();
       } catch { } finally { setLoading(false); }
     };
     load();
   }, []);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadData();
+      toast.success('Policy data refreshed');
+    } catch {
+      toast.error('Unable to refresh policy data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleBuy = async (planType) => {
     setPurchasing(planType);
     try {
       const res = await policyAPI.create({ planType, paymentMethod: 'upi' });
-      toast.success(`${res.data.policy.planName} activated! You're now protected. 🎉`);
+      toast.success(`${res.data.policy.planName} activated! You're now protected.`);
       setMyPolicies(prev => [res.data.policy, ...prev]);
       updateWorker({ activePolicyId: res.data.policy._id });
       setTab('my-policies');
@@ -71,7 +117,7 @@ export default function PolicyPage() {
   const handleRenew = async (id) => {
     try {
       const res = await policyAPI.renew(id, { paymentMethod: 'upi' });
-      toast.success('Policy renewed for another week! 🎉');
+      toast.success('Policy renewed for another week.');
       setMyPolicies(prev => prev.map(p => p._id === id ? res.data.policy : p));
     } catch (err) {
       toast.error(err.response?.data?.message || 'Renewal failed');
@@ -81,14 +127,18 @@ export default function PolicyPage() {
   if (loading) return <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="card h-40 skeleton" />)}</div>;
 
   return (
-    <div className="space-y-6 animate-slide-in">
-      <div className="flex items-center justify-between">
+    <div className="page-container animate-slide-in">
+      <div className="section-head">
         <div>
+          <span className="section-chip mb-3">Plan And Coverage</span>
           <h1 className="font-display text-2xl font-bold text-white">Insurance Policy</h1>
           <p className="text-gray-400 text-sm mt-1">Weekly income protection for gig workers</p>
         </div>
+        <button onClick={handleRefresh} className="btn-secondary text-sm py-2 px-3" disabled={refreshing}>
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
         {risk && (
-          <div className="card py-2 px-4 text-sm text-right hidden sm:block">
+          <div className="bg-white/[0.06] border border-white/10 rounded-xl py-2 px-4 text-sm text-right hidden sm:block">
             <p className="text-gray-400">Your Risk Score</p>
             <p className={`font-bold ${risk.riskCategory === 'low' ? 'text-green-400' : risk.riskCategory === 'high' ? 'text-red-400' : 'text-yellow-400'}`}>
               {Math.round(risk.riskScore * 100)} / 100 ({risk.riskCategory})
@@ -98,11 +148,11 @@ export default function PolicyPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-dark-800 border border-dark-600 rounded-xl p-1 w-fit">
-        {[['plans', '📋 Plans'], ['my-policies', `📁 My Policies (${myPolicies.length})`]].map(([t, l]) => (
+      <div className="tabs-shell">
+        {[['plans', `Plans`, FiFileText], ['my-policies', `My Policies (${myPolicies.length})`, FiFolder]].map(([t, l, Icon]) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-brand-500 text-white' : 'text-gray-400 hover:text-white'}`}>
-            {l}
+            className={tab === t ? 'tabs-btn-active inline-flex items-center gap-2' : 'tabs-btn inline-flex items-center gap-2'}>
+            <Icon className="text-sm" /> {l}
           </button>
         ))}
       </div>
@@ -111,7 +161,7 @@ export default function PolicyPage() {
         <div className="space-y-6">
           {activePolicy && (
             <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-sm text-green-300">
-              ✅ You have an active <strong>{activePolicy.planName}</strong>. Cancel it first to switch plans.
+              <span className="inline-flex items-center gap-2"><FiCheckCircle /> You have an active <strong>{activePolicy.planName}</strong>. Cancel it first to switch plans.</span>
             </div>
           )}
 
@@ -122,7 +172,10 @@ export default function PolicyPage() {
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 badge-orange font-bold">RECOMMENDED</div>
                 )}
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">{PLAN_ICONS[key]}</span>
+                  {(() => {
+                    const PlanIcon = PLAN_ICONS[key] || FiShield;
+                    return <PlanIcon className="text-2xl text-brand-300" />;
+                  })()}
                   <h3 className="font-display font-bold text-white">{plan.planName}</h3>
                 </div>
 
@@ -131,9 +184,12 @@ export default function PolicyPage() {
                   <div className="text-gray-400 text-sm">per week</div>
                 </div>
 
-                <div className="p-3 bg-dark-700 rounded-xl mb-4">
+                <div className="p-3 bg-white/[0.04] border border-white/10 rounded-xl mb-4">
                   <p className="text-gray-400 text-xs mb-1">Coverage Amount</p>
                   <p className="text-white font-bold text-lg">₹{plan.coverageAmount.toLocaleString()}/week</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Covers about {Math.min(100, Math.round((plan.coverageAmount / Math.max(worker?.averageWeeklyEarnings || 1, 1)) * 100))}% of your weekly earnings
+                  </p>
                   {plan.premiumBreakdown && (
                     <div className="mt-2 space-y-1 text-xs text-gray-500">
                       <div className="flex justify-between"><span>Base Premium</span><span>₹{plan.basePremium}</span></div>
@@ -148,7 +204,7 @@ export default function PolicyPage() {
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Covered Disruptions</p>
                   {plan.coverageTriggers?.map(t => (
                     <div key={t} className="flex items-center gap-2 text-sm text-gray-300">
-                      <span className="text-brand-400 text-xs">✓</span>
+                      <FiCheck className="text-brand-300 text-xs" />
                       {TRIGGER_LABELS[t] || t}
                     </div>
                   ))}
@@ -157,7 +213,7 @@ export default function PolicyPage() {
                 <div className="space-y-2 mb-4">
                   {plan.features?.map(f => (
                     <div key={f} className="flex items-center gap-2 text-xs text-gray-400">
-                      <span className="text-green-400">✓</span>{f}
+                      <FiCheck className="text-cyan-300" />{f}
                     </div>
                   ))}
                 </div>
@@ -176,7 +232,7 @@ export default function PolicyPage() {
         <div className="space-y-4">
           {myPolicies.length === 0 ? (
             <div className="card text-center py-16">
-              <div className="text-5xl mb-4">🔓</div>
+              <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 mx-auto mb-4 text-brand-300 flex items-center justify-center"><FiUnlock className="text-3xl" /></div>
               <p className="text-gray-400 mb-4">No policies yet</p>
               <button onClick={() => setTab('plans')} className="btn-primary text-sm">View Plans →</button>
             </div>
@@ -185,7 +241,7 @@ export default function PolicyPage() {
               <div key={policy._id} className="card">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-brand-500/20 rounded-xl flex items-center justify-center text-2xl">🛡️</div>
+                    <div className="w-12 h-12 bg-brand-500/20 rounded-xl flex items-center justify-center text-brand-300"><FiShield className="text-2xl" /></div>
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-white">{policy.planName}</p>
@@ -204,6 +260,12 @@ export default function PolicyPage() {
                   </div>
                 </div>
 
+                {policy.status === 'active' && new Date(policy.endDate) - new Date() <= 2 * 24 * 60 * 60 * 1000 && (
+                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-300 text-xs">
+                    Policy expires soon. Renew now to avoid coverage gaps.
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                   {[
                     { l: 'Coverage', v: `₹${policy.coverageAmount?.toLocaleString()}` },
@@ -211,7 +273,7 @@ export default function PolicyPage() {
                     { l: 'Start Date', v: new Date(policy.startDate).toLocaleDateString('en-IN') },
                     { l: 'End Date', v: new Date(policy.endDate).toLocaleDateString('en-IN') },
                   ].map(({ l, v }) => (
-                    <div key={l} className="bg-dark-700 rounded-xl p-3">
+                    <div key={l} className="bg-white/[0.04] border border-white/10 rounded-xl p-3">
                       <p className="text-gray-500 text-xs">{l}</p>
                       <p className="text-white font-semibold text-sm mt-0.5">{v}</p>
                     </div>
@@ -221,15 +283,21 @@ export default function PolicyPage() {
                 <div className="mt-4">
                   <p className="text-xs text-gray-500 font-medium mb-2">Covered Triggers</p>
                   <div className="flex flex-wrap gap-2">
-                    {policy.coverageTriggers?.map(ct => (
-                      <span key={ct.type} className="badge-blue text-xs">{TRIGGER_LABELS[ct.type] || ct.type}</span>
-                    ))}
+                    {policy.coverageTriggers?.map(ct => {
+                      const TriggerIcon = TRIGGER_ICONS[ct.type] || FiActivity;
+                      return (
+                        <span key={ct.type} className="badge-blue text-xs inline-flex items-center gap-1">
+                          <TriggerIcon className="text-xs" />
+                          {TRIGGER_LABELS[ct.type] || ct.type}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
                   <span>Total Premium Paid: <strong className="text-white">₹{policy.totalPremiumPaid}</strong></span>
-                  <span>Claims Paid: <strong className="text-green-400">₹{policy.totalClaimsPaid || 0}</strong></span>
+                  <span>Claims Paid: <strong className="text-cyan-300">₹{policy.totalClaimsPaid || 0}</strong></span>
                 </div>
               </div>
             ))

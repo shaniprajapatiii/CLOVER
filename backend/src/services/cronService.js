@@ -52,7 +52,7 @@ const startCronJobs = () => {
         await Notification.create({
           workerId: policy.workerId._id,
           title: 'Policy Expiring Soon',
-          message: `Your GigShield policy ${policy.policyNumber} expires on ${policy.endDate.toDateString()}. Renew to stay protected!`,
+          message: `Your CLOVER policy ${policy.policyNumber} expires on ${policy.endDate.toDateString()}. Renew to stay protected!`,
           type: 'policy_expiring',
           priority: 'high',
           data: { policyId: policy._id, policyNumber: policy.policyNumber }
