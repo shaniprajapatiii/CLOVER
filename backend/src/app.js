@@ -8,13 +8,32 @@ const path = require('path');
 
 const app = express();
 
+const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set();
+configuredOrigins.forEach((origin) => {
+  allowedOrigins.add(origin);
+  if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+    allowedOrigins.add(`https://${origin}`);
+    allowedOrigins.add(`http://${origin}`);
+  }
+});
+
 // Security
 app.use(helmet());
 app.use(compression());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow non-browser requests (curl/postman) and same-origin requests.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
