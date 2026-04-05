@@ -1,0 +1,35 @@
+node_modules/
+**/node_modules/
+
+# Build outputs
+build/
+dist/
+coverage/
+frontend/build/
+Clover-Partner-App/dist/
+Clover-Partner-App/.vite/
+
+# Logs
+logs/
+*.log
+backend/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Misc caches and deployment metadata
+.cache/
+.parcel-cache/
+.vercel/
