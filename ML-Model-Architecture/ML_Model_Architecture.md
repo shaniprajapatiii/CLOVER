@@ -8,12 +8,12 @@
 - [What Problem Does This Solve?](#what-problem-does-this-solve)
 - [High-Level Architecture](#high-level-architecture)
 - [How the Pricing Model Works](#how-the-pricing-model-works)
-  - [Step 1 — Earnings Baseline (W_e)](#step-1--earnings-baseline-we)
-  - [Step 2 — Expected Disruption Frequency (E_freq_w)](#step-2--expected-disruption-frequency-efreqw)
+  - [Step 1 — Earnings Baseline (W_e)](#step-1)
+  - [Step 2 — Expected Disruption Frequency (E_freq_w)](#step-2)
   - [Step 3 — Composite Risk Multiplier (RM)](#step-3--composite-risk-multiplier-rm)
   - [Step 4 — Moral Hazard Factor / Fraud Score (MF)](#step-4--moral-hazard-factor--fraud-score-mf)
-  - [Step 5 — Pure Risk Cost (PRC_w)](#step-5--pure-risk-cost-prcw)
-  - [Step 6 — Final Weekly Premium (P_w)](#step-6--final-weekly-premium-pw)
+  - [Step 5 — Pure Risk Cost (PRC_w)](#step-5)
+  - [Step 6 — Final Weekly Premium (P_w)](#step-6)
 - [The ML Fraud Detection System](#the-ml-fraud-detection-system)
   - [FDS Score Model](#fds-score-model)
   - [Earnings Baseline ML Model](#earnings-baseline-ml-model)
@@ -85,6 +85,7 @@ MF    = 1 + (1 − FDS) × 0.08
 ```
 
 
+<a id="step-1"></a>
 ### Step 1 — Earnings Baseline (W_e)
 
 `W_e` is the worker's estimated **weekly net earnings**, which serves as the foundation for both the premium and the payout amount.
@@ -106,6 +107,7 @@ Rather than relying on self-reported income (which is gameable), W_e is derived 
 > The ML model flags any sudden spike in declared earnings in the 7 days before a known disruption event and freezes the W_e baseline at the pre-spike average — a key anti-fraud control.
 
 
+<a id="step-2"></a>
 ### Step 2 — Expected Disruption Frequency (E_freq_w)
 
 ```
@@ -203,6 +205,7 @@ MF = 1 + (1 − FDS) × 0.08
 The FDS model is described in full in the [ML Fraud Detection System](#the-ml-fraud-detection-system) section below.
 
 
+<a id="step-5"></a>
 ### Step 5 — Pure Risk Cost (PRC_w)
 
 ```
@@ -224,6 +227,7 @@ PRC_w = 4,900 × 0.25 × 0.577 × (1.20 × 1.15 × 1.00 × 1.25) × 1.012
 ```
 
 
+<a id="step-6"></a>
 ### Step 6 — Final Weekly Premium (P_w)
 
 ```
