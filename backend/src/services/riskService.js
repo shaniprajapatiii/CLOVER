@@ -37,9 +37,9 @@ const VEHICLE_RISK_ADJUSTMENTS = {
 };
 
 const SEGMENT_BASE_PREMIUMS = {
-  food: { basic: 49, standard: 89, premium: 139 },
-  ecommerce: { basic: 59, standard: 99, premium: 149 },
-  grocery_qcommerce: { basic: 44, standard: 79, premium: 129 }
+  food: { basic: 49, standard: 149, premium: 199 },
+  ecommerce: { basic: 49, standard: 149, premium: 199 },
+  grocery_qcommerce: { basic: 49, standard: 149, premium: 199 }
 };
 
 const PLAN_COVERAGE_MULTIPLIERS = {

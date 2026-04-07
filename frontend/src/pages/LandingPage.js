@@ -260,8 +260,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { name: 'Basic Shield', price: '₹49', coverage: '₹1,800', triggers: 3, color: 'border-dark-600', badge: '' },
-              { name: 'Standard Shield', price: '₹89', coverage: '₹2,800', triggers: 6, color: 'border-brand-500', badge: 'Most Popular' },
-              { name: 'Premium Shield', price: '₹139', coverage: '₹4,000', triggers: 11, color: 'border-dark-600', badge: '' },
+              { name: 'Standard Shield', price: '₹149', coverage: '₹2,800', triggers: 6, color: 'border-brand-500', badge: 'Most Popular' },
+              { name: 'Premium Shield', price: '₹199', coverage: '₹4,000', triggers: 11, color: 'border-dark-600', badge: '' },
             ].map((plan) => (
               <div key={plan.name} className={`card border-2 ${plan.color} relative`}>
                 {plan.badge && (

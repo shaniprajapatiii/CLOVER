@@ -47,7 +47,7 @@ const seed = async () => {
   for (let i = 0; i < workers.length; i++) {
     const w = workers[i];
     const planType = planTypes[i % 3];
-    const premiums = { basic: 49, standard: 89, premium: 139 };
+    const premiums = { basic: 49, standard: 149, premium: 199 };
     const coverages = { basic: 1800, standard: 2800, premium: 4000 };
 
     const policy = await Policy.create({
