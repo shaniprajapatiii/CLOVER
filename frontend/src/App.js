@@ -11,7 +11,8 @@ import DashboardHome from './pages/DashboardHome';
 import PolicyPage from './pages/PolicyPage';
 import ClaimsPage from './pages/ClaimsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
-import { WeatherPage, NotificationsPage, ProfilePage, KycPage, ReferralPage } from './pages/OtherPages';
+import WeatherAlertsPage from './pages/WeatherAlertsPage';
+import { NotificationsPage, ProfilePage, KycPage, ReferralPage } from './pages/OtherPages';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -48,7 +49,8 @@ export default function App() {
           <Route path="policy" element={<PolicyPage />} />
           <Route path="claims" element={<ClaimsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="weather" element={<WeatherPage />} />
+          <Route path="weather" element={<WeatherAlertsPage />} />
+          <Route path="weather-alerts" element={<WeatherAlertsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="kyc" element={<KycPage />} />

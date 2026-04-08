@@ -6,6 +6,7 @@ import {
   FiActivity,
   FiAlertTriangle,
   FiAward,
+  FiChevronRight,
   FiCloudRain,
   FiCompass,
   FiDroplet,
@@ -65,23 +66,131 @@ export default function DashboardHome() {
   const { worker } = useAuthStore();
   const [dashboard, setDashboard] = useState(null);
   const [weather, setWeather] = useState(null);
+  const [weatherAlerts, setWeatherAlerts] = useState([]);
+  const [currentForecast, setCurrentForecast] = useState([]);
+  const [allCityForecasts, setAllCityForecasts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [geoLocation, setGeoLocation] = useState(null);
+  const [geoCity, setGeoCity] = useState(null);
 
+  // Request geolocation on component mount
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setGeoLocation({ lat: latitude, lon: longitude });
+        },
+        (error) => console.log('Geolocation denied:', error.message)
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const resolveGeoCity = async () => {
+      if (!geoLocation) return;
+
+      try {
+        const res = await weatherAPI.reverseGeocode(geoLocation.lat, geoLocation.lon);
+        setGeoCity(res.data?.city || null);
+      } catch (err) {
+        console.log('Error resolving geo city:', err);
+        setGeoCity(null);
+      }
+    };
+
+    resolveGeoCity();
+  }, [geoLocation]);
+
+  // Fetch dashboard data
   useEffect(() => {
     const load = async () => {
       try {
-        const [dashRes] = await Promise.all([analyticsAPI.getDashboard()]);
+        const dashRes = await analyticsAPI.getDashboard();
         setDashboard(dashRes.data.dashboard);
-        if (worker?.city) {
-          try {
-            const wRes = await weatherAPI.getCurrent(worker.city);
-            setWeather(wRes.data);
-          } catch { }
-        }
-      } catch { } finally { setLoading(false); }
+      } catch (err) { 
+        console.log('Error loading dashboard:', err); 
+      } finally { 
+        setLoading(false); 
+      }
     };
     load();
   }, [worker]);
+
+  // Fetch weather based on current location
+  useEffect(() => {
+    const loadWeather = async () => {
+      try {
+        if (geoLocation) {
+          // Fetch weather using geolocation
+          const wRes = await weatherAPI.getCurrent({ 
+            lat: geoLocation.lat, 
+            lon: geoLocation.lon 
+          });
+          setCurrentLocation(geoCity || wRes.data?.location?.city || wRes.data?.weather?.city || 'Current location');
+          setWeather(wRes.data);
+        } else {
+          return;
+        }
+      } catch (err) { 
+        console.log('Error loading weather:', err); 
+      }
+    };
+    loadWeather();
+  }, [geoLocation, geoCity]);
+
+  useEffect(() => {
+    const loadAlerts = async () => {
+      if (!geoCity && !currentLocation) return;
+      try {
+        const res = await weatherAPI.getEvents({
+          city: geoCity || currentLocation,
+          active: 'true',
+          limit: 3
+        });
+        setWeatherAlerts(res.data?.events || []);
+      } catch (err) {
+        console.log('Error loading weather alerts:', err);
+        setWeatherAlerts([]);
+      }
+    };
+
+    loadAlerts();
+  }, [currentLocation, geoCity]);
+
+  useEffect(() => {
+    const loadForecast = async () => {
+      try {
+        if (geoLocation) {
+          const res = await weatherAPI.getForecast({ lat: geoLocation.lat, lon: geoLocation.lon, days: 5 });
+          setCurrentForecast(res.data?.forecast || []);
+        } else if (currentLocation) {
+          const res = await weatherAPI.getForecast({ city: currentLocation, days: 5 });
+          setCurrentForecast(res.data?.forecast || []);
+        }
+      } catch (err) {
+        console.log('Error loading current forecast:', err);
+        setCurrentForecast([]);
+      }
+    };
+
+    loadForecast();
+  }, [geoLocation, currentLocation]);
+
+  useEffect(() => {
+    const loadAllCityForecasts = async () => {
+      try {
+        const res = await weatherAPI.getForecastAllCities(3);
+        setAllCityForecasts(res.data?.cities || []);
+      } catch (err) {
+        console.log('Error loading all city forecasts:', err);
+        setAllCityForecasts([]);
+      }
+    };
+
+    loadAllCityForecasts();
+  }, []);
 
   if (loading) return (
     <div className="space-y-4">
@@ -92,15 +201,16 @@ export default function DashboardHome() {
   const policy = dashboard?.policy;
   const claimStats = dashboard?.claimStats || {};
   const recentClaims = dashboard?.recentClaims || [];
-  const alerts = dashboard?.weatherAlerts || [];
+  const alerts = weatherAlerts;
   const daysUntilExpiry = policy ? Math.ceil((new Date(policy.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+  const formatDay = (dateStr) => new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'short' });
 
   return (
     <div className="page-container animate-slide-in">
-      {/* Welcome Banner */}
+      {/* Welcome Banner with Current Location */}
       <div className="section-head">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+          <div className="flex-1">
             <span className="section-chip mb-3">Live Protection Snapshot</span>
             <h1 className="font-display text-2xl font-bold text-white">
               नमस्ते, {worker?.name?.split(' ')[0]}
@@ -108,25 +218,58 @@ export default function DashboardHome() {
             <p className="text-gray-400 mt-1">
               {policy ? `Your ${policy.planName} is active · ${daysUntilExpiry} days remaining` : 'You are not currently covered. Get protected now.'}
             </p>
+            {/* Geolocation Display Badge */}
+            {currentLocation && (
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-blue-500/15 border border-blue-500/40 rounded-lg">
+                <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                <span className="text-sm font-medium text-blue-300">📍 {currentLocation}</span>
+              </div>
+            )}
           </div>
-          {!policy && (
-            <Link to="/dashboard/policy" className="btn-primary text-sm shrink-0">Get Protected Now →</Link>
-          )}
-          {policy && daysUntilExpiry <= 2 && (
-            <Link to="/dashboard/policy" className="btn-primary text-sm shrink-0">Renew Now →</Link>
-          )}
+          <div className="flex gap-3 flex-wrap">
+            {/* Location Refresh Button */}
+            {geoLocation && (
+              <button 
+                onClick={() => navigator.geolocation.getCurrentPosition(
+                  (pos) => setGeoLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude })
+                )}
+                className="px-3 py-2 bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs rounded-lg hover:bg-brand-500/20 transition"
+              >
+                📍 Use My Location
+              </button>
+            )}
+            {!policy && (
+              <Link to="/dashboard/policy" className="btn-primary text-sm shrink-0">Get Protected Now →</Link>
+            )}
+            {policy && daysUntilExpiry <= 2 && (
+              <Link to="/dashboard/policy" className="btn-primary text-sm shrink-0">Renew Now →</Link>
+            )}
+          </div>
         </div>
+
       </div>
 
       {/* Weather Alert Banner */}
       {alerts.length > 0 && (
         <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
-          <FiAlertTriangle className="text-xl text-red-300 mt-0.5" />
-          <div>
-            <p className="text-red-300 font-semibold text-sm">Active Weather Alert in {worker?.city}</p>
-            <p className="text-red-400/70 text-xs mt-0.5">{alerts[0].eventType?.replace(/_/g,' ')} — {alerts[0].severity} severity detected. Your claim may be auto-triggered.</p>
+          <FiAlertTriangle className="text-xl text-red-300 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-red-300 font-semibold text-sm">⚠️ Weather Alert Active</p>
+            <div className="mt-1 space-y-1">
+              {alerts.slice(0, 2).map((alert, idx) => (
+                <p key={idx} className="text-red-400/80 text-xs">
+                  <strong>📍 {alert.city}:</strong> {alert.eventType?.replace(/_/g,' ')} ({alert.severity})
+                </p>
+              ))}
+              {alerts.length > 2 && (
+                <p className="text-red-400/70 text-xs">+ {alerts.length - 2} more alert{alerts.length - 2 !== 1 ? 's' : ''}</p>
+              )}
+            </div>
+            <p className="text-red-400/70 text-xs mt-2">Your claim may be auto-triggered. Check details for affected areas.</p>
           </div>
-          <Link to="/dashboard/weather" className="ml-auto text-xs text-red-300 hover:text-red-200 whitespace-nowrap">View →</Link>
+          <Link to="/dashboard/weather-alerts" className="ml-auto text-xs text-red-300 hover:text-red-200 whitespace-nowrap font-medium flex items-center gap-1 flex-shrink-0">
+            View All <FiChevronRight className="text-sm" />
+          </Link>
         </div>
       )}
 
@@ -256,7 +399,10 @@ export default function DashboardHome() {
         {/* Current Weather */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-bold text-white">Weather in {worker?.city}</h2>
+            <div>
+              <h2 className="font-display text-lg font-bold text-white">Live Weather</h2>
+              <p className="text-xs text-gray-500 mt-0.5">📍 {currentLocation || 'Your location'}</p>
+            </div>
             <Link to="/dashboard/weather" className="text-brand-400 text-sm hover:text-brand-300">Details →</Link>
           </div>
           {weather ? (
@@ -291,12 +437,70 @@ export default function DashboardHome() {
               </div>
               {weather.triggers?.length > 0 && (
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm">
-                  <p className="text-red-300 font-medium inline-flex items-center gap-2"><FiAlertTriangle /> {weather.triggers.length} trigger(s) active — claims may be triggered automatically</p>
+                  <p className="text-red-300 font-medium inline-flex items-center gap-2"><FiAlertTriangle /> {weather.triggers.length} trigger(s) active in {currentLocation} — claims may be triggered automatically</p>
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500 text-sm">Weather data unavailable</div>
+            <div className="text-center py-8 text-gray-500 text-sm">Loading weather data...</div>
+          )}
+        </div>
+      </div>
+
+      {/* Forecast: Current + All Cities */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+        <div className="xl:col-span-2 card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display text-lg font-bold text-white">Forecast for {currentLocation || 'Your Area'}</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Next 5 days</p>
+            </div>
+            <Link to="/dashboard/weather" className="text-brand-400 text-sm hover:text-brand-300">Details →</Link>
+          </div>
+          {currentForecast.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {currentForecast.map((day) => (
+                <div key={day.date} className="bg-white/[0.04] border border-white/10 rounded-xl p-3">
+                  <p className="text-xs text-gray-400">{formatDay(day.date)}</p>
+                  <p className="text-white font-bold mt-1">{Math.round(day.tempMax)}° / {Math.round(day.tempMin)}°</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Rain: {Math.round(day.rainChance)}%</p>
+                  <p className="text-[11px] text-gray-500">Wind: {Math.round(day.windMax)} km/h</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">Forecast unavailable for current location.</p>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-bold text-white">All City Forecast</h2>
+            <span className="text-xs text-gray-500">Top cities</span>
+          </div>
+          {allCityForecasts.length > 0 ? (
+            <div className="space-y-2 max-h-80 overflow-auto pr-1">
+              {allCityForecasts.map((item) => {
+                const today = item.forecast?.[0];
+                return (
+                  <div key={item.city} className="p-3 bg-white/[0.04] border border-white/10 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <p className="text-white text-sm font-semibold">{item.city}</p>
+                      <p className="text-xs text-gray-500">{item.state}</p>
+                    </div>
+                    {today ? (
+                      <p className="text-xs text-gray-400 mt-1">
+                        {Math.round(today.tempMax)}° / {Math.round(today.tempMin)}° · Rain {Math.round(today.rainChance)}%
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">No forecast data</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">City forecast unavailable.</p>
           )}
         </div>
       </div>

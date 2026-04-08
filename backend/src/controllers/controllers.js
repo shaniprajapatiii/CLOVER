@@ -1,4 +1,6 @@
 // ===== ANALYTICS CONTROLLER =====
+const logger = require('../utils/logger');
+
 const analyticsController = {};
 
 analyticsController.getDashboardStats = async (req, res) => {
@@ -130,13 +132,56 @@ const weatherController = {};
 
 weatherController.getCurrentWeather = async (req, res) => {
   try {
-    const { fetchWeatherData, fetchAQIData, evaluateTriggers } = require('../services/weatherService');
-    const city = req.query.city || req.worker.city;
-    const weather = await fetchWeatherData(city);
-    const aqi = await fetchAQIData(city);
+    const { fetchWeatherData, fetchAQIData, evaluateTriggers, reverseGeocode } = require('../services/weatherService');
+    const { city, lat, lon } = req.query;
+    logger.info?.(`weather/current requested with city=${city || 'none'}, lat=${lat || 'none'}, lon=${lon || 'none'}`);
+    
+    let weather, aqi, location;
+    
+    // Priority: lat/lon > city > worker's default city
+    if (lat && lon) {
+      location = { lat: parseFloat(lat), lon: parseFloat(lon) };
+      weather = await fetchWeatherData(null, location.lat, location.lon);
+      aqi = await fetchAQIData(null, location.lat, location.lon);
+      location.city = weather.city || (await reverseGeocode(location.lat, location.lon));
+    } else {
+      const targetCity = city || req.worker?.city || 'Mumbai';
+      weather = await fetchWeatherData(targetCity);
+      aqi = await fetchAQIData(targetCity);
+      location = { lat: weather.lat, lon: weather.lon, city: weather.city };
+    }
+
+    logger.info?.(`weather/current resolved to city=${location?.city || weather?.city || 'unknown'}`);
+    
     weather.aqi = aqi;
     const triggers = evaluateTriggers(weather);
-    res.json({ success: true, city, weather, triggers, timestamp: new Date() });
+    res.json({ success: true, location, weather, triggers, timestamp: new Date() });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+weatherController.getCities = async (req, res) => {
+  try {
+    const { MAJOR_CITIES } = require('../services/weatherService');
+    res.json({ success: true, cities: MAJOR_CITIES });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+weatherController.reverseGeocode = async (req, res) => {
+  try {
+    const { lat, lon } = req.query;
+    const { reverseGeocode } = require('../services/weatherService');
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ success: false, message: 'Latitude and longitude required' });
+    }
+    
+    const cityName = await reverseGeocode(parseFloat(lat), parseFloat(lon));
+    logger.info?.(`reverseGeocode resolved lat=${lat}, lon=${lon} to city=${cityName}`);
+    res.json({ success: true, city: cityName, lat: parseFloat(lat), lon: parseFloat(lon) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -145,14 +190,58 @@ weatherController.getCurrentWeather = async (req, res) => {
 weatherController.getWeatherEvents = async (req, res) => {
   try {
     const WeatherEvent = require('../models/WeatherEvent');
-    const { city, active, limit = 20 } = req.query;
+    const { cities, city, active, limit = 50 } = req.query;
     const filter = {};
-    if (city) filter.city = new RegExp(city, 'i');
+    
+    // Support both single city and multiple cities (comma-separated)
+    if (cities) {
+      const cityList = cities.split(',').map(c => c.trim()).filter(c => c);
+      if (cityList.length > 0) {
+        filter.city = { $in: cityList };
+      }
+    } else if (city) {
+      filter.city = new RegExp(city, 'i');
+    }
+    
     if (active === 'true') filter.isActive = true;
-    const events = await WeatherEvent.find(filter).sort({ startTime: -1 }).limit(parseInt(limit));
-    res.json({ success: true, events });
+    
+    const events = await WeatherEvent.find(filter)
+      .sort({ startTime: -1 })
+      .limit(parseInt(limit));
+    
+    res.json({ success: true, events, count: events.length, timestamp: new Date() });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+weatherController.getForecast = async (req, res) => {
+  try {
+    const { fetchForecastData } = require('../services/weatherService');
+    const { city, lat, lon, days = 5 } = req.query;
+
+    let data;
+    if (lat && lon) {
+      data = await fetchForecastData(null, parseFloat(lat), parseFloat(lon), parseInt(days));
+    } else {
+      const targetCity = city || req.worker?.city || 'Mumbai';
+      data = await fetchForecastData(targetCity, null, null, parseInt(days));
+    }
+
+    res.json({ success: true, ...data, timestamp: new Date() });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+weatherController.getForecastAllCities = async (req, res) => {
+  try {
+    const { fetchForecastForMajorCities } = require('../services/weatherService');
+    const { days = 3 } = req.query;
+    const cities = await fetchForecastForMajorCities(parseInt(days));
+    res.json({ success: true, cities, timestamp: new Date() });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 

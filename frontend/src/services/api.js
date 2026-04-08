@@ -71,7 +71,18 @@ export const claimAPI = {
 
 // ===== WEATHER =====
 export const weatherAPI = {
-  getCurrent: (city) => api.get('/weather/current', { params: { city } }),
+  getCurrent: (params) => {
+    // Handle both old (city string) and new (object with city/lat/lon) formats
+    const queryParams = typeof params === 'string' ? { city: params } : params;
+    return api.get('/weather/current', { params: queryParams });
+  },
+  getForecast: (params) => {
+    const queryParams = typeof params === 'string' ? { city: params } : params;
+    return api.get('/weather/forecast', { params: queryParams });
+  },
+  getForecastAllCities: (days = 3) => api.get('/weather/forecast/all-cities', { params: { days } }),
+  getCities: () => api.get('/weather/cities'),
+  reverseGeocode: (lat, lon) => api.get('/weather/reverse-geocode', { params: { lat, lon } }),
   getEvents: (params) => api.get('/weather/events', { params }),
   simulate: (data) => api.post('/weather/simulate', data),
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore, useUIStore } from '../store';
-import { notificationAPI } from '../services/api';
+import { notificationAPI, weatherAPI } from '../services/api';
 import {
   FiGrid,
   FiShield,
@@ -59,6 +59,38 @@ export default function DashboardLayout() {
   const { worker, logout } = useAuthStore();
   const { sidebarOpen, setSidebarOpen, unreadCount, setUnreadCount } = useUIStore();
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [geoLocation, setGeoLocation] = useState(null);
+  const [geoCity, setGeoCity] = useState(null);
+
+  // Get browser geolocation
+  React.useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setGeoLocation({ lat: latitude, lon: longitude });
+        },
+        (error) => console.log('Geolocation denied:', error.message)
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    const resolveCity = async () => {
+      if (geoLocation?.lat && geoLocation?.lon) {
+        try {
+          const res = await weatherAPI.reverseGeocode(geoLocation.lat, geoLocation.lon);
+          setGeoCity(res.data?.city || null);
+        } catch {
+          setGeoCity(null);
+        }
+      } else {
+        setGeoCity(null);
+      }
+    };
+
+    resolveCity();
+  }, [geoLocation, worker]);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -112,7 +144,7 @@ export default function DashboardLayout() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm truncate">{worker?.name}</p>
-              <p className="text-gray-500 text-xs capitalize">{worker?.platform} · {worker?.city}</p>
+              <p className="text-gray-500 text-xs capitalize">{worker?.platform} · {geoCity || 'Detecting location...'}</p>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between">
@@ -210,6 +242,12 @@ export default function DashboardLayout() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden lg:block text-xs text-gray-300 bg-brand-500/10 border border-brand-500/25 rounded-full px-3 py-1">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+            {geoLocation && (
+              <span className="hidden md:flex items-center gap-1.5 text-xs text-blue-300 bg-blue-500/15 border border-blue-500/30 rounded-full px-3 py-1">
+                <span className="inline-block w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+                📍 {geoCity || 'Detecting location...'}
+              </span>
+            )}
             {worker?.activePolicyId ? (
               <span className="badge-green text-xs hidden sm:flex"><FiCheckCircle className="text-xs" /> Protected</span>
             ) : (
