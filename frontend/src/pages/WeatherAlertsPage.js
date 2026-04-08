@@ -139,11 +139,17 @@ export default function WeatherAlertsPage() {
   const effectiveCity = useMemo(() => {
     if (selectedCity?.name) return selectedCity.name;
     if (geoCityName) return geoCityName;
-    return worker?.city || 'Mumbai';
+    return null;
   }, [selectedCity, geoCityName, worker]);
 
   useEffect(() => {
     const loadAlerts = async () => {
+      if (!effectiveCity) {
+        setAlerts([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const [eventsRes] = await Promise.all([
@@ -167,6 +173,11 @@ export default function WeatherAlertsPage() {
 
   useEffect(() => {
     const loadCurrentForecast = async () => {
+      if (!effectiveCity) {
+        setCurrentForecast([]);
+        return;
+      }
+
       try {
         const res = await weatherAPI.getForecast({ city: effectiveCity, days: 5 });
         setCurrentForecast(res.data?.forecast || []);
@@ -176,9 +187,7 @@ export default function WeatherAlertsPage() {
       }
     };
 
-    if (effectiveCity) {
-      loadCurrentForecast();
-    }
+    loadCurrentForecast();
   }, [effectiveCity]);
 
   useEffect(() => {
@@ -212,7 +221,7 @@ export default function WeatherAlertsPage() {
               <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
               Current location
             </div>
-            <p className="mt-1 text-blue-300">📍 {geoCityName || worker?.city || 'Detecting...'}</p>
+            <p className="mt-1 text-blue-300">📍 {geoCityName || 'Detecting...'}</p>
           </div>
         </div>
       </div>
@@ -277,8 +286,14 @@ export default function WeatherAlertsPage() {
       </div>
 
       <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300">
-        Showing weather alerts for <span className="text-white font-semibold">{effectiveCity}</span>
-        {selectedCity?.name ? ' (city override)' : ' (current location default)'}
+        {effectiveCity ? (
+          <>
+            Showing weather alerts for <span className="text-white font-semibold">{effectiveCity}</span>
+            {selectedCity?.name ? ' (city override)' : ' (current location default)'}
+          </>
+        ) : (
+          <span>Waiting for location access to load weather alerts.</span>
+        )}
       </div>
 
       {/* Forecast Section */}
@@ -286,7 +301,7 @@ export default function WeatherAlertsPage() {
         <div className="xl:col-span-2 card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-display text-lg font-bold text-white">Forecast for {effectiveCity}</h2>
+              <h2 className="font-display text-lg font-bold text-white">Forecast for {effectiveCity || 'Current Location'}</h2>
               <p className="text-xs text-gray-500 mt-0.5">Next 5 days</p>
             </div>
           </div>
@@ -302,7 +317,7 @@ export default function WeatherAlertsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">Forecast unavailable for {effectiveCity}.</p>
+            <p className="text-gray-500 text-sm">Forecast unavailable until location is resolved.</p>
           )}
         </div>
 
