@@ -1,5 +1,6 @@
 // Notification Service - Real-time order notifications
 import { useOrderStore } from '../store/useOrderStore';
+import { apiFetch } from './httpClient';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -11,17 +12,17 @@ export const notificationService = {
     const poll = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(
+        const data = await apiFetch(
           `${API_BASE}/delivery/orders/available?latitude=${latitude}&longitude=${longitude}&maxDistance=5`,
           {
             headers: {
               'Authorization': `Bearer ${token}`
             }
-          }
+          },
+          'Failed to fetch available orders'
         );
-        const data = await response.json();
-        
-        if (response.ok && data.data && data.data.length > 0) {
+
+        if (data.data && data.data.length > 0) {
           const orders = data.data;
           
           // Check for new orders not yet shown

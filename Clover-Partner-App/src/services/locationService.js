@@ -1,4 +1,6 @@
 // Real-time Location & Activity Service
+import { apiFetch } from './httpClient';
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export const locationService = {
@@ -6,7 +8,7 @@ export const locationService = {
   async logActivity(workerId, deliveryPartnerId, activityData) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/delivery/activities/log`, {
+      const data = await apiFetch(`${API_BASE}/delivery/activities/log`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -17,9 +19,7 @@ export const locationService = {
           deliveryPartnerId,
           ...activityData
         })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to log activity');
+      }, 'Failed to log activity');
       return data.data;
     } catch (error) {
       console.error('Error logging activity:', error);
@@ -31,7 +31,7 @@ export const locationService = {
   async logDeliveryLocation(orderId, workerId, location, deviceInfo, networkInfo) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/delivery/orders/${orderId}/location`, {
+      const data = await apiFetch(`${API_BASE}/delivery/orders/${orderId}/location`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,9 +44,7 @@ export const locationService = {
           networkInfo,
           timestamp: new Date().toISOString()
         })
-      });
-      const data = await response.json();
-      if (!response.ok) console.warn('Location log failed:', data.message);
+      }, 'Failed to log location');
       return data.data;
     } catch (error) {
       console.warn('Warning: Could not log location:', error.message);
@@ -57,16 +55,15 @@ export const locationService = {
   async getActivityTimeline(workerId, limit = 50) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(
+      const data = await apiFetch(
         `${API_BASE}/delivery/workers/${workerId}/activities?limit=${limit}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        }
+        },
+        'Failed to fetch timeline'
       );
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to fetch timeline');
       return data.data || [];
     } catch (error) {
       console.error('Error fetching activity timeline:', error);
@@ -78,13 +75,11 @@ export const locationService = {
   async getActivityStats(workerId) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/delivery/workers/${workerId}/activity-stats`, {
+      const data = await apiFetch(`${API_BASE}/delivery/workers/${workerId}/activity-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to fetch stats');
+      }, 'Failed to fetch stats');
       return data.data;
     } catch (error) {
       console.error('Error fetching activity stats:', error);
@@ -96,16 +91,14 @@ export const locationService = {
   async syncToCLOVER(workerId) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/delivery/activities/sync-to-clover`, {
+      const data = await apiFetch(`${API_BASE}/delivery/activities/sync-to-clover`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ workerId })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to sync to CLOVER');
+      }, 'Failed to sync to CLOVER');
       return data.data;
     } catch (error) {
       console.error('Error syncing to CLOVER:', error);
@@ -117,13 +110,11 @@ export const locationService = {
   async detectAnomalies(workerId) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/delivery/activities/anomalies/${workerId}`, {
+      const data = await apiFetch(`${API_BASE}/delivery/activities/anomalies/${workerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to detect anomalies');
+      }, 'Failed to detect anomalies');
       return data.data;
     } catch (error) {
       console.error('Error detecting anomalies:', error);

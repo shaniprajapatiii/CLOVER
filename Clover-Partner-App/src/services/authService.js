@@ -1,5 +1,6 @@
 // Authentication Service - Handle all auth-related API calls
 import { useAuthStore } from '../store/useAuthStore';
+import { apiFetch } from './httpClient';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -7,13 +8,11 @@ export const authService = {
   // Send OTP to phone number
   async sendOtp(phone) {
     try {
-      const response = await fetch(`${API_BASE}/auth/send-otp`, {
+      const data = await apiFetch(`${API_BASE}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to send OTP');
+      }, 'Failed to send OTP');
       return data;
     } catch (error) {
       throw error;
@@ -23,13 +22,11 @@ export const authService = {
   // Verify OTP and get token
   async verifyOtp(phone, otp) {
     try {
-      const response = await fetch(`${API_BASE}/auth/verify-otp`, {
+      const data = await apiFetch(`${API_BASE}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otp })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'OTP verification failed');
+      }, 'OTP verification failed');
       
       // Store token locally
       if (data.token) {
@@ -52,16 +49,14 @@ export const authService = {
   async registerPartner(partnerData) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/workers/register`, {
+      const data = await apiFetch(`${API_BASE}/workers/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(partnerData)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Registration failed');
+      }, 'Registration failed');
       if (data.worker) {
         localStorage.setItem('partnerId', data.worker._id);
         localStorage.setItem('partnerData', JSON.stringify(data.worker));
@@ -77,13 +72,11 @@ export const authService = {
   async getProfile(workerId) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/workers/${workerId}`, {
+      const data = await apiFetch(`${API_BASE}/workers/${workerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to fetch profile');
+      }, 'Failed to fetch profile');
       return data.worker || data;
     } catch (error) {
       throw error;
@@ -94,16 +87,14 @@ export const authService = {
   async updateProfile(workerId, profileData) {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE}/workers/${workerId}`, {
+      const data = await apiFetch(`${API_BASE}/workers/${workerId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(profileData)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Update failed');
+      }, 'Update failed');
       if (data.worker) {
         localStorage.setItem('partnerData', JSON.stringify(data.worker));
         useAuthStore.getState().login(data.worker);
