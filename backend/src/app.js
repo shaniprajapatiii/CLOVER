@@ -8,7 +8,11 @@ const path = require('path');
 
 const app = express();
 
-const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173')
+const frontendUrlValues = [process.env.FRONTEND_URL, process.env.FRONTEND_URL_PARTNER]
+  .filter(Boolean)
+  .join(',');
+
+const configuredOrigins = (frontendUrlValues || 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);

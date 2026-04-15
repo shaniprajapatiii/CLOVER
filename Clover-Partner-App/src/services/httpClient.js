@@ -39,7 +39,7 @@ export const apiFetch = async (url, options = {}, fallbackMessage = 'Request fai
     return payload || {};
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error('Unable to reach server. Check API URL, backend deployment, and CORS settings.');
+      throw new Error(`Unable to reach server (${url}). Check API URL, backend deployment, and CORS settings.`);
     }
     throw error;
   }
