@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { workerController } = require('../controllers/controllers');
+const { completeWorkerRegistration, getWorkerProfileById, updateWorkerProfileById } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 router.use(protect);
+router.post('/register', completeWorkerRegistration);
+router.get('/:id', getWorkerProfileById);
+router.put('/:id', updateWorkerProfileById);
 router.get('/leaderboard', workerController.getLeaderboard);
 router.get('/referrals', workerController.getReferralStats);
 router.post('/kyc', workerController.submitKyc);

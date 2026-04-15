@@ -6,6 +6,9 @@ const workerSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   phone: { type: String, required: true, unique: true, trim: true },
   email: { type: String, trim: true, lowercase: true },
+  dateOfBirth: { type: String },
+  gender: { type: String, enum: ['male', 'female', 'other'] },
+  address: { type: String, trim: true },
   password: { type: String, required: true, select: false },
   avatar: { type: String, default: null },
 
@@ -13,6 +16,7 @@ const workerSchema = new mongoose.Schema({
   aadhaarNumber: { type: String, trim: true },
   panNumber: { type: String, trim: true },
   bankAccountNumber: { type: String },
+  accountHolderName: { type: String },
   ifscCode: { type: String },
   upiId: { type: String },
   isKycVerified: { type: Boolean, default: false },
@@ -41,10 +45,19 @@ const workerSchema = new mongoose.Schema({
     required: true
   },
   city: { type: String, required: true },
+  state: { type: String },
   zone: { type: String },
   pincode: { type: String },
   latitude: { type: Number },
   longitude: { type: Number },
+
+  // Registration form extras
+  bankName: { type: String },
+  vehicleNumber: { type: String },
+  vehicleModel: { type: String },
+  drivingLicenseNumber: { type: String },
+  panNumber: { type: String },
+  aadhaarNumber: { type: String, trim: true },
 
   // Earnings Profile (for risk/premium calculation)
   averageWeeklyEarnings: { type: Number, default: 3500 },
@@ -80,6 +93,16 @@ const workerSchema = new mongoose.Schema({
   lastLogin: { type: Date },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date }
+  ,
+  // Partner preferences and profile completeness
+  emergencyContactName: { type: String },
+  emergencyContactPhone: { type: String },
+  preferredShift: { type: String, enum: ['morning', 'afternoon', 'evening', 'night', 'flexible'], default: 'flexible' },
+  availabilityRadiusKm: { type: Number, default: 5 },
+  preferredAreas: [{ type: String }],
+  languages: [{ type: String }],
+  isOnDuty: { type: Boolean, default: false },
+  profileCompletedAt: { type: Date }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

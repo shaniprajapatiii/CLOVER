@@ -8,7 +8,7 @@ const path = require('path');
 
 const app = express();
 
-const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+const configuredOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
@@ -31,6 +31,8 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow non-browser requests (curl/postman) and same-origin requests.
     if (!origin) return callback(null, true);
+    const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (isLocalDevOrigin) return callback(null, true);
     if (allowedOrigins.has(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
@@ -71,6 +73,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/risk', require('./routes/riskRoutes'));
+app.use('/api/delivery', require('./routes/deliveryRoutes')); // Delivery & Order Management
 
 // Health check
 app.get('/api/health', (req, res) => {
