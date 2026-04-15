@@ -1,8 +1,7 @@
 // Notification Service - Real-time order notifications
 import { useOrderStore } from '../store/useOrderStore';
 import { apiFetch } from './httpClient';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { API_BASE } from './apiBase';
 
 export const notificationService = {
   // Polling service to check for new orders every 10 seconds

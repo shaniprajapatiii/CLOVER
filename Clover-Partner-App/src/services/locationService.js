@@ -1,7 +1,6 @@
 // Real-time Location & Activity Service
 import { apiFetch } from './httpClient';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+import { API_BASE } from './apiBase';
 
 export const locationService = {
   // Log activity (online/offline/location update)
