@@ -8,21 +8,24 @@ const path = require('path');
 
 const app = express();
 
+const normalizeOrigin = (value) => String(value || '').trim().replace(/\/$/, '');
+const allowVercelAppOrigins = process.env.ALLOW_VERCEL_APP_ORIGINS !== 'false';
+
 const frontendUrlValues = [process.env.FRONTEND_URL, process.env.FRONTEND_URL_PARTNER]
   .filter(Boolean)
   .join(',');
 
 const configuredOrigins = (frontendUrlValues || 'http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173')
   .split(',')
-  .map((o) => o.trim())
+  .map((o) => normalizeOrigin(o))
   .filter(Boolean);
 
 const allowedOrigins = new Set();
 configuredOrigins.forEach((origin) => {
   allowedOrigins.add(origin);
   if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
-    allowedOrigins.add(`https://${origin}`);
-    allowedOrigins.add(`http://${origin}`);
+    allowedOrigins.add(normalizeOrigin(`https://${origin}`));
+    allowedOrigins.add(normalizeOrigin(`http://${origin}`));
   }
 });
 
@@ -35,10 +38,13 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow non-browser requests (curl/postman) and same-origin requests.
     if (!origin) return callback(null, true);
-    const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    const normalizedOrigin = normalizeOrigin(origin);
+    const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalizedOrigin);
+    const isVercelAppOrigin = /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalizedOrigin);
     if (isLocalDevOrigin) return callback(null, true);
-    if (allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
+    if (allowVercelAppOrigins && isVercelAppOrigin) return callback(null, true);
+    if (allowedOrigins.has(normalizedOrigin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${normalizedOrigin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

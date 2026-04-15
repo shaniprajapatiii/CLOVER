@@ -72,17 +72,18 @@ export const Otp = () => {
 
     try {
       const result = await authService.verifyOtp(phone, code);
-      
-      setSuccess('OTP verified! Redirecting to registration...');
+      const nextRoute = result?.isProfileComplete ? '/dashboard' : '/register';
+
+      setSuccess(nextRoute === '/dashboard' ? 'OTP verified! Redirecting to dashboard...' : 'OTP verified! Redirecting to registration...');
       
       // Store token from response
       if (result.token) {
         localStorage.setItem('authToken', result.token);
       }
 
-      // Navigate to registration page
+      // Navigate to next step based on profile completeness
       setTimeout(() => {
-        navigate('/register', { state: { phone, otp: code }, replace: true });
+        navigate(nextRoute, { state: { phone, otp: code }, replace: true });
       }, 1500);
     } catch (err) {
       setError(err.message || 'OTP verification failed');
