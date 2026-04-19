@@ -36,6 +36,7 @@ export default function LandingPage() {
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'Pricing', href: '#pricing' },
     { label: 'Support', href: '#footer' },
+    { label: 'Future Scope', href: '/future-scope', isRoute: true },
   ];
 
   useEffect(() => {
@@ -104,7 +105,11 @@ export default function LandingPage() {
 
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((item) => (
-              <a key={item.href} href={item.href} className="nav-link">{item.label}</a>
+              item.isRoute ? (
+                <Link key={item.href} to={item.href} className="nav-link">{item.label}</Link>
+              ) : (
+                <a key={item.href} href={item.href} className="nav-link">{item.label}</a>
+              )
             ))}
           </div>
 
@@ -175,8 +180,26 @@ export default function LandingPage() {
           <p className="text-gray-600 text-sm mt-4">Weekly pricing · Instant onboarding · UPI-first payout</p>
           </div>
 
-          <div className="animate-float-soft">
-            <ShowcaseIllustration />
+          <div
+            className="animate-float-soft flex flex-col items-center gap-8 mt-6 md:mt-0 md:gap-10 lg:-mt-10 xl:-mt-16"
+          >
+            <div className="w-full">
+              <ShowcaseIllustration />
+            </div>
+            <a
+              href={
+                process.env.REACT_APP_PARTNER_APP_URL ||
+                (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                  ? 'http://localhost:5173'
+                  : 'https://clover-partner.vercel.app')
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary text-base py-3 px-10 text-center inline-block rounded-xl shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+              style={{ marginTop: 0 }}
+            >
+              Go to Clover Partner App
+            </a>
           </div>
         </div>
 

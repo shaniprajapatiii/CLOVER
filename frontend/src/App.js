@@ -16,6 +16,8 @@ import { NotificationsPage, ProfilePage, KycPage, ReferralPage } from './pages/O
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
+import FutureScope from './pages/FutureScope';
+
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, worker } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -57,6 +59,7 @@ export default function App() {
           <Route path="referral" element={<ReferralPage />} />
           <Route path="admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
         </Route>
+        <Route path="/future-scope" element={<FutureScope />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

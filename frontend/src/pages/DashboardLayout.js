@@ -47,6 +47,7 @@ const NAV_ITEMS = [
   { path: '/dashboard/kyc', label: 'KYC / Documents', icon: FiCreditCard },
   { path: '/dashboard/referral', label: 'Refer & Earn', icon: FiGift },
   { path: '/dashboard/profile', label: 'Profile', icon: FiUser },
+  { path: '/future-scope', label: 'Future Scope', icon: FiStar },
 ];
 
 const ADMIN_ITEMS = [
